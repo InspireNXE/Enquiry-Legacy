@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+    id 'com.github.hierynomus.license' version '0.11.0'
+    id 'com.github.johnrengelman.shadow' version '1.2.1'
+}
+
+defaultTasks 'clean', 'build', 'licenseFormat'
+
+ext.name = 'Enquiry'
+ext.organization = 'InspireNXE'
+ext.url = 'http://github.com/InspireNXE/'
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'Sponge maven repo'
+        url 'http://repo.spongepowered.org/maven'
+    }
+}
+
+dependencies {
+    compile 'com.github.kevinsawicki:http-request:6.0'
+    compile 'org.spongepowered:spongeapi:2.1-SNAPSHOT'
+}
+
+shadowJar {
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    dependencies {
+        include(dependency("com.github.kevinsawicki:http-request:6.0"))
+    }
+    classifier = ''
+}
+
+build.dependsOn shadowJar
+
+license {
+    ext.name = project.name
+    ext.organization = organization
+    ext.url = url
+    header rootProject.file('HEADER.txt')
+    ignoreFailures true
+    strictCheck true
+    includes(['**/*.java'])
+}
