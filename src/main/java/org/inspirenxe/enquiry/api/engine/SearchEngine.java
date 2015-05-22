@@ -26,6 +26,7 @@ package org.inspirenxe.enquiry.api.engine;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,6 +38,18 @@ public interface SearchEngine {
      * @return The name
      */
     Text getName();
+
+    /**
+     * Gets the {@link CommandSpec} of the engine.
+     * @return The {@link CommandSpec}
+     */
+    CommandSpec getCommandSpec();
+
+    /**
+     * Gets the aliases
+     * @return The aliases
+     */
+    List<String> getAliases();
 
     /**
      * Gets the URL of the engine's website.

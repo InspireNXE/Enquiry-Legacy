@@ -24,17 +24,17 @@
  */
 package org.inspirenxe.enquiry;
 
-import com.github.kevinsawicki.http.HttpRequest;
-import com.google.gson.Gson;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
+import org.inspirenxe.enquiry.api.engine.SearchEngine;
+import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.inspirenxe.enquiry.api.event.SearchFailureEvent;
 import org.inspirenxe.enquiry.api.event.SearchPreEvent;
 import org.inspirenxe.enquiry.api.event.SearchSuccessEvent;
 import org.inspirenxe.enquiry.engine.BingEngine;
-import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.inspirenxe.enquiry.engine.GoogleEngine;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -52,7 +52,6 @@ import org.spongepowered.api.util.command.CommandException;
 import org.spongepowered.api.util.command.CommandResult;
 import org.spongepowered.api.util.command.CommandSource;
 import org.spongepowered.api.util.command.args.CommandContext;
-import org.spongepowered.api.util.command.args.GenericArguments;
 import org.spongepowered.api.util.command.spec.CommandExecutor;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
@@ -60,15 +59,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
-
-import javax.xml.ws.http.HTTPException;
+import java.util.Map;
+import java.util.Set;
 
 @Plugin(id = "enquiry", name = "Enquiry", version = "1.0")
 @NonnullByDefault
 public class Enquiry {
 
-    public static final BingEngine BING_SEARCH_ENGINE = new BingEngine();
-    public static final GoogleEngine GOOGLE_SEARCH_ENGINE = new GoogleEngine();
+    private static final Set<SearchEngine> engines = Sets.newHashSet();
 
     private static Enquiry instance;
 
@@ -76,18 +74,14 @@ public class Enquiry {
     @Inject public Logger logger;
 
     @Inject
-    @DefaultConfig(sharedRoot = true) public File defaultConfig;
+    @DefaultConfig(sharedRoot = true)
+    public File defaultConfig;
 
     @Inject
     @DefaultConfig(sharedRoot = true)
     private ConfigurationLoader<CommentedConfigurationNode> configManager;
 
-    public CommentedConfigurationNode bingConfigurationNode;
-    public String bingAppId;
-
-    public CommentedConfigurationNode googleConfigurationNode;
-    public String googleApiKey;
-    public String googleSearchId;
+    public CommentedConfigurationNode rootNode;
 
     @Subscribe
     public void onConstruction(ConstructionEvent event) {
@@ -97,83 +91,68 @@ public class Enquiry {
     @Subscribe
     public void onServerAboutToStart(ServerAboutToStartEvent event) throws IOException {
         // Setup configuration
-        CommentedConfigurationNode config;
         if (!defaultConfig.exists()) {
-            defaultConfig.createNewFile();
-            config = configManager.load();
-            config.getNode("bing", "app-id")
+            this.defaultConfig.createNewFile();
+            this.rootNode = this.configManager.load();
+            this.rootNode.getNode("bing", "app-id")
                     .setValue("")
                     .setComment("The app ID from your Microsoft account <https://msdn.microsoft.com/en-us/library/dd251020.aspx>");
-            config.getNode("google", "api-key")
+            this.rootNode.getNode("google", "api-key")
                     .setValue("")
                     .setComment("The API key from your Google account <https://developers.google.com/console/help/#generatingdevkeys>");
-            config.getNode("google", "search-id")
+            this.rootNode.getNode("google", "search-id")
                     .setValue("")
                     .setComment("The custom search engine ID from your Google account <https://support.google"
                             + ".com/customsearch/answer/2649143?hl=en>");
-            configManager.save(config);
+            this.configManager.save(rootNode);
         }
-        config = configManager.load();
-        bingConfigurationNode = config.getNode("bing");
-        bingAppId = bingConfigurationNode.getNode("app-id").getString("");
+        this.rootNode = this.configManager.load();
 
-        googleConfigurationNode = config.getNode("google");
-        googleApiKey = googleConfigurationNode.getNode("api-key").getString("");
-        googleSearchId = googleConfigurationNode.getNode("search-id").getString("");
+        // Register default engines
+        registerEngines(new BingEngine(), new GoogleEngine());
 
-        // Register commands
-        final CommandSpec bingCommand = CommandSpec.builder()
-                .description(Texts.of("Searches ", BING_SEARCH_ENGINE.getName(), " for the query provided."))
-                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), game),
-                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
-                .permission("enquiry.command.search.bing")
-                .executor(new SearchCommandExecutor(BING_SEARCH_ENGINE))
-                .build();
-        final CommandSpec googleCommand = CommandSpec.builder()
-                .description(Texts.of("Searches ", GOOGLE_SEARCH_ENGINE.getName(), " for the query provided."))
-                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), game),
-                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
-                .permission("enquiry.command.search.google")
-                .executor(new SearchCommandExecutor(GOOGLE_SEARCH_ENGINE))
-                .build();
-        game.getCommandDispatcher().register(this,
-                CommandSpec.builder()
-                        .child(bingCommand, "bing", "b")
-                        .child(googleCommand, "google", "g")
-                        .build(),
-                "enquiry", "eq");
-        game.getCommandDispatcher().register(this, bingCommand, "bing", "b", "eqb");
-        game.getCommandDispatcher().register(this, googleCommand, "google", "g", "eqg");
+        final Map<List<String>, CommandSpec> children = Maps.newHashMap();
+        for (SearchEngine engine : engines) {
+            this.game.getCommandDispatcher().register(this, engine.getCommandSpec(), engine.getAliases());
+            children.put(engine.getAliases(), engine.getCommandSpec());
+        }
+        this.game.getCommandDispatcher().register(this, CommandSpec.builder().children(children).build(), "enquiry", "eq");
     }
 
     public static Enquiry getInstance() {
         return instance;
     }
 
-    private class SearchCommandExecutor implements CommandExecutor {
+    public static void registerEngines(SearchEngine... searchEngines) {
+        for (SearchEngine engine : searchEngines) {
+            engines.add(engine);
+            Enquiry.getInstance().logger.info("Registered " + engine.getName());
+        }
+    }
+
+    public static class SearchCommandExecutor implements CommandExecutor {
         private SearchEngine engine;
 
-        private SearchCommandExecutor(SearchEngine engine) {
+        public SearchCommandExecutor(SearchEngine engine) {
             this.engine = engine;
         }
 
         @Override
         public CommandResult execute(final CommandSource src, final CommandContext args) throws CommandException {
-            Enquiry.getInstance().game.getAsyncScheduler().runTask(Enquiry.getInstance(), new Runnable() {
+            getInstance().game.getAsyncScheduler().runTask(getInstance(), new Runnable() {
                 @Override
                 public void run() {
                     final String query = args.<String>getOne("search").get();
                     final SearchPreEvent preEvent = new SearchPreEvent(src, engine, query);
-                    if (!Enquiry.getInstance().game.getEventManager().post(preEvent)) {
+                    if (!getInstance().game.getEventManager().post(preEvent)) {
                         try {
-                            engine = preEvent.engine;
-                            final List<? extends SearchResult> results = engine.getResults(query);
-                            final SearchSuccessEvent event = new SearchSuccessEvent(src, engine, query, results);
-                            if (!Enquiry.getInstance().game.getEventManager().post(event)) {
+                            final List<? extends SearchResult> results = preEvent.engine.getResults(query);
+                            final SearchSuccessEvent event = new SearchSuccessEvent(src, preEvent.engine, query, results);
+                            if (!getInstance().game.getEventManager().post(event)) {
                                 src.sendMessage(Texts.of(
-                                        "(", Texts.of(engine.getName()).builder()
-                                                .onClick(new ClickAction.OpenUrl(new URL(engine.getUrl())))
-                                                .onHover(new HoverAction.ShowText(Texts.of(engine.getUrl())))
+                                        "(", Texts.of(event.engine.getName()).builder()
+                                                .onClick(new ClickAction.OpenUrl(new URL(event.engine.getUrl())))
+                                                .onHover(new HoverAction.ShowText(Texts.of(event.engine.getUrl())))
                                                 .build(),
                                         TextColors.RESET, ") Result(s) for: ", TextColors.YELLOW, query));
                                 int i = 1;
@@ -186,8 +165,8 @@ public class Enquiry {
                                 }
                             }
                         } catch (IOException e) {
-                            if (!Enquiry.getInstance().game.getEventManager().post(new SearchFailureEvent(src, engine, query))) {
-                                src.sendMessage(Texts.of("An error occurred while attempting to search ", engine.getName(), " for ", TextColors
+                            if (!getInstance().game.getEventManager().post(new SearchFailureEvent(src, preEvent.engine, query))) {
+                                src.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ", TextColors
                                         .YELLOW, query));
                             }
                         }

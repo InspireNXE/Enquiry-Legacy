@@ -4,7 +4,7 @@ Enquiry
 A simple plugin that allows you to search the web within Minecraft. It is licensed under the [MIT License]. 
 
 ### Prerequisites
-* Java 7
+* Java 6
 * Gradle 2.4+
 
 ### Commands

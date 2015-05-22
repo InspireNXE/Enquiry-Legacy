@@ -25,20 +25,34 @@
 package org.inspirenxe.enquiry.engine;
 
 import com.github.kevinsawicki.http.HttpRequest;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.util.command.args.GenericArguments;
+import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class GoogleEngine implements SearchEngine {
+    private final CommentedConfigurationNode googleConfigurationNode = Enquiry.getInstance().rootNode.getNode("google");
+    private final String googleApiKey = googleConfigurationNode.getNode("api-key").getString("");
+    private final String googleSearchId = googleConfigurationNode.getNode("search-id").getString("");
+    private final CommandSpec commandSpec = CommandSpec.builder()
+            .description(Texts.of("Searches ", getName(), " for the query provided."))
+            .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), Enquiry.getInstance().game),
+                    GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
+            .permission("enquiry.command.search.google")
+            .executor(new Enquiry.SearchCommandExecutor(this))
+            .build();
 
     @SerializedName("items")
     private List<GoogleResult> results;
@@ -54,6 +68,16 @@ public class GoogleEngine implements SearchEngine {
     }
 
     @Override
+    public List<String> getAliases() {
+        return ImmutableList.of("google", "g", "eqg");
+    }
+
+    @Override
+    public CommandSpec getCommandSpec() {
+        return commandSpec;
+    }
+
+    @Override
     public String getUrl() {
         return "https://www.google.com";
     }
@@ -66,8 +90,8 @@ public class GoogleEngine implements SearchEngine {
     @Override
     public HttpRequest getRequest(String query) {
         return HttpRequest.get(getSearchUrl(), true,
-                "key", Enquiry.getInstance().googleApiKey,
-                "cx", Enquiry.getInstance().googleSearchId,
+                "key", this.googleApiKey,
+                "cx", this.googleSearchId,
                 "fields", "items(title,link,snippet)",
                 "q", query)
                 .acceptJson()
@@ -76,11 +100,11 @@ public class GoogleEngine implements SearchEngine {
 
     @Override
     public List<? extends SearchResult> getResults(String query) throws IOException {
-        if (Enquiry.getInstance().googleApiKey.isEmpty()) {
+        if (this.googleApiKey.isEmpty()) {
             throw new IOException("google.api-key in " + Enquiry.getInstance().defaultConfig.getCanonicalPath() + " must be set in order to"
                     + "search with Google!");
         }
-        if (Enquiry.getInstance().googleSearchId.isEmpty()) {
+        if (this.googleSearchId.isEmpty()) {
             throw new IOException("google.search-id in " + Enquiry.getInstance().defaultConfig.getCanonicalPath() + " must be set in order to "
                     + "search with Google!");
         }

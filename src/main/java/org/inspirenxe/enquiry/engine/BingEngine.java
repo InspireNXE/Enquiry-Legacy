@@ -25,20 +25,33 @@
 package org.inspirenxe.enquiry.engine;
 
 import com.github.kevinsawicki.http.HttpRequest;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.util.command.args.GenericArguments;
+import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class BingEngine implements SearchEngine {
+    private final CommentedConfigurationNode bingConfigurationNode = Enquiry.getInstance().rootNode.getNode("bing");
+    private final String bingAppId = bingConfigurationNode.getNode("app-id").getString("");
+    private final CommandSpec commandSpec = CommandSpec.builder()
+            .description(Texts.of("Searches ", getName(), " for the query provided."))
+            .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), Enquiry.getInstance().game),
+                    GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
+            .permission("enquiry.command.search.bing")
+            .executor(new Enquiry.SearchCommandExecutor(this))
+            .build();
 
     @SerializedName("d")
     private BingData data;
@@ -46,6 +59,16 @@ public class BingEngine implements SearchEngine {
     @Override
     public Text getName() {
         return Texts.of(TextColors.BLUE, "Bing");
+    }
+
+    @Override
+    public List<String> getAliases() {
+        return ImmutableList.of("bing", "b", "eqb");
+    }
+
+    @Override
+    public CommandSpec getCommandSpec() {
+        return commandSpec;
     }
 
     @Override
@@ -64,14 +87,14 @@ public class BingEngine implements SearchEngine {
                 "Query", "\'" + query + "\'",
                 "$format", "json",
                 "$top", 10)
-                .basic(Enquiry.getInstance().bingAppId, Enquiry.getInstance().bingAppId)
+                .basic(bingAppId, bingAppId)
                 .acceptJson()
                 .acceptCharset(StandardCharsets.UTF_8.name());
     }
 
     @Override
     public List<? extends SearchResult> getResults(String query) throws IOException {
-        if (Enquiry.getInstance().bingAppId.isEmpty()) {
+        if (bingAppId.isEmpty()) {
             throw new IOException("bing.app-id in " + Enquiry.getInstance().defaultConfig.getCanonicalPath() + " must be set in order to search "
                     + "with Bing!");
         }
