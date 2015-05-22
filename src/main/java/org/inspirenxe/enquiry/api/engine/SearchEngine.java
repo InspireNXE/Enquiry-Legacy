@@ -22,16 +22,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry;
+package org.inspirenxe.enquiry.api.engine;
 
-import com.google.gson.annotations.SerializedName;
+import com.github.kevinsawicki.http.HttpRequest;
+import org.spongepowered.api.text.Text;
 
-public class GoogleResult {
-    public String title;
+import java.io.IOException;
+import java.util.List;
 
-    @SerializedName("snippet")
-    public String description;
+public interface SearchEngine {
 
-    @SerializedName("link")
-    public String url;
+    /**
+     * Gets the name of the engine.
+     * @return The name
+     */
+    Text getName();
+
+    /**
+     * Gets the URL of the engine's website.
+     * @return The engine's website URL
+     */
+    String getUrl();
+
+    /**
+     * Gets the URL of the engine's search API url.
+     * @return The engine's search API url
+     */
+    String getSearchUrl();
+
+    /**
+     * Gets the {@link HttpRequest} of the engine.
+     * @param query The query
+     * @return The request
+     */
+    HttpRequest getRequest(String query);
+
+    /**
+     * Gets a list of {@link SearchResult}.
+     * @param query The query
+     * @return The list of results
+     */
+    List<? extends SearchResult> getResults(String query) throws IOException;
 }

@@ -22,16 +22,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api;
+package org.inspirenxe.enquiry.api.event;
 
+import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.spongepowered.api.util.command.CommandSource;
 
 /**
- * Fired when a search has failed.
+ * Fired before the search occurs.
+ * <p>
+ * Cancelling will prevent a search from occurring.
  */
-public class SearchFailureEvent extends SearchEvent {
+public class SearchPreEvent extends SearchEvent {
 
-    public SearchFailureEvent(CommandSource source) {
-        super(source);
+    public SearchPreEvent(CommandSource source, SearchEngine engine, String query) {
+        super(source, engine, query);
+    }
+
+    /**
+     * Sets the engine to search with.
+     * @param engine The {@link SearchEngine}
+     * @return The event
+     */
+    public SearchPreEvent setEngine(SearchEngine engine) {
+        this.engine = engine;
+        return this;
+    }
+
+    /**
+     * Sets the query to search for.
+     * @param query The query
+     * @return The event
+     */
+    public SearchPreEvent setQuery(String query) {
+        this.query = query;
+        return this;
     }
 }

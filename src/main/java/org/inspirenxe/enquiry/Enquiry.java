@@ -29,9 +29,13 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
-import org.inspirenxe.enquiry.api.SearchFailureEvent;
-import org.inspirenxe.enquiry.api.SearchPreEvent;
-import org.inspirenxe.enquiry.api.SearchSuccessEvent;
+import org.inspirenxe.enquiry.api.event.SearchFailureEvent;
+import org.inspirenxe.enquiry.api.event.SearchPreEvent;
+import org.inspirenxe.enquiry.api.event.SearchSuccessEvent;
+import org.inspirenxe.enquiry.engine.BingEngine;
+import org.inspirenxe.enquiry.api.engine.SearchEngine;
+import org.inspirenxe.enquiry.api.engine.SearchResult;
+import org.inspirenxe.enquiry.engine.GoogleEngine;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.event.Subscribe;
@@ -39,7 +43,6 @@ import org.spongepowered.api.event.state.ConstructionEvent;
 import org.spongepowered.api.event.state.ServerAboutToStartEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.service.config.DefaultConfig;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.action.ClickAction;
 import org.spongepowered.api.text.action.HoverAction;
@@ -56,15 +59,16 @@ import org.spongepowered.api.util.command.spec.CommandSpec;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.xml.ws.http.HTTPException;
 
 @Plugin(id = "enquiry", name = "Enquiry", version = "1.0")
 @NonnullByDefault
 public class Enquiry {
 
-    public static final String GOOGLE_URL = "https://www.googleapis.com/customsearch/v1";
+    public static final BingEngine BING_SEARCH_ENGINE = new BingEngine();
+    public static final GoogleEngine GOOGLE_SEARCH_ENGINE = new GoogleEngine();
 
     private static Enquiry instance;
 
@@ -72,16 +76,18 @@ public class Enquiry {
     @Inject public Logger logger;
 
     @Inject
-    @DefaultConfig(sharedRoot = true)
-    private File defaultConfig;
+    @DefaultConfig(sharedRoot = true) public File defaultConfig;
 
     @Inject
     @DefaultConfig(sharedRoot = true)
     private ConfigurationLoader<CommentedConfigurationNode> configManager;
 
-    private int googleConnectionTimeout;
-    private String googleApiKey;
-    private String googleSearchId;
+    public CommentedConfigurationNode bingConfigurationNode;
+    public String bingAppId;
+
+    public CommentedConfigurationNode googleConfigurationNode;
+    public String googleApiKey;
+    public String googleSearchId;
 
     @Subscribe
     public void onConstruction(ConstructionEvent event) {
@@ -95,6 +101,9 @@ public class Enquiry {
         if (!defaultConfig.exists()) {
             defaultConfig.createNewFile();
             config = configManager.load();
+            config.getNode("bing", "app-id")
+                    .setValue("")
+                    .setComment("The app ID from your Microsoft account <https://msdn.microsoft.com/en-us/library/dd251020.aspx>");
             config.getNode("google", "api-key")
                     .setValue("")
                     .setComment("The API key from your Google account <https://developers.google.com/console/help/#generatingdevkeys>");
@@ -105,50 +114,81 @@ public class Enquiry {
             configManager.save(config);
         }
         config = configManager.load();
-        googleConnectionTimeout = config.getNode("connection-timeout").getInt(100);
-        googleApiKey = config.getNode("google", "api-key").getString("");
-        googleSearchId = config.getNode("google", "search-id").getString("");
+        bingConfigurationNode = config.getNode("bing");
+        bingAppId = bingConfigurationNode.getNode("app-id").getString("");
+
+        googleConfigurationNode = config.getNode("google");
+        googleApiKey = googleConfigurationNode.getNode("api-key").getString("");
+        googleSearchId = googleConfigurationNode.getNode("search-id").getString("");
 
         // Register commands
+        final CommandSpec bingCommand = CommandSpec.builder()
+                .description(Texts.of("Searches ", BING_SEARCH_ENGINE.getName(), " for the query provided."))
+                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), game),
+                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
+                .permission("enquiry.command.search.bing")
+                .executor(new SearchCommandExecutor(BING_SEARCH_ENGINE))
+                .build();
+        final CommandSpec googleCommand = CommandSpec.builder()
+                .description(Texts.of("Searches ", GOOGLE_SEARCH_ENGINE.getName(), " for the query provided."))
+                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), game),
+                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
+                .permission("enquiry.command.search.google")
+                .executor(new SearchCommandExecutor(GOOGLE_SEARCH_ENGINE))
+                .build();
         game.getCommandDispatcher().register(this,
                 CommandSpec.builder()
-                        .child(CommandSpec.builder()
-                                        .description(Texts.of("Searches Google for the query provided"))
-                                        .arguments(GenericArguments.remainingJoinedStrings(Texts.of("search")))
-                                        .permission("enquiry.command.search.google")
-                                        .executor(new GoogleCommandExecutor())
-                                        .build(),
-                                "google", "g")
+                        .child(bingCommand, "bing", "b")
+                        .child(googleCommand, "google", "g")
                         .build(),
                 "enquiry", "eq");
+        game.getCommandDispatcher().register(this, bingCommand, "bing", "b", "eqb");
+        game.getCommandDispatcher().register(this, googleCommand, "google", "g", "eqg");
     }
 
     public static Enquiry getInstance() {
         return instance;
     }
 
-    private class GoogleCommandExecutor implements CommandExecutor {
+    private class SearchCommandExecutor implements CommandExecutor {
+        private SearchEngine engine;
+
+        private SearchCommandExecutor(SearchEngine engine) {
+            this.engine = engine;
+        }
 
         @Override
         public CommandResult execute(final CommandSource src, final CommandContext args) throws CommandException {
             Enquiry.getInstance().game.getAsyncScheduler().runTask(Enquiry.getInstance(), new Runnable() {
                 @Override
                 public void run() {
-                    if (!Enquiry.getInstance().game.getEventManager().post(new SearchPreEvent(src))) {
-                        final String query = args.<String>getOne("search").get();
+                    final String query = args.<String>getOne("search").get();
+                    final SearchPreEvent preEvent = new SearchPreEvent(src, engine, query);
+                    if (!Enquiry.getInstance().game.getEventManager().post(preEvent)) {
                         try {
-                            final List<Text> results = searchGoogle(query);
-                            final SearchSuccessEvent event = new SearchSuccessEvent(src, results);
+                            engine = preEvent.engine;
+                            final List<? extends SearchResult> results = engine.getResults(query);
+                            final SearchSuccessEvent event = new SearchSuccessEvent(src, engine, query, results);
                             if (!Enquiry.getInstance().game.getEventManager().post(event)) {
-                                src.sendMessage(Texts.of("Results for: ", TextColors.YELLOW, query));
-                                for (Text text : results) {
-                                    src.sendMessage(text);
+                                src.sendMessage(Texts.of(
+                                        "(", Texts.of(engine.getName()).builder()
+                                                .onClick(new ClickAction.OpenUrl(new URL(engine.getUrl())))
+                                                .onHover(new HoverAction.ShowText(Texts.of(engine.getUrl())))
+                                                .build(),
+                                        TextColors.RESET, ") Result(s) for: ", TextColors.YELLOW, query));
+                                int i = 1;
+                                for (SearchResult result : event.results) {
+                                    src.sendMessage(Texts.of(i++, ". ", TextColors.GRAY, result.getTitle()).builder()
+                                            .onClick(new ClickAction.OpenUrl(new URL(result.getUrl())))
+                                            .onHover(new HoverAction.ShowText(
+                                                    Texts.of(result.getDescription().replaceAll("(.{1,70})( +|$\\n?)|(.{1,70})", "$1$3\n").trim())))
+                                            .build());
                                 }
                             }
                         } catch (IOException e) {
-                            if (!Enquiry.getInstance().game.getEventManager().post(new SearchFailureEvent(src))) {
-                                src.sendMessage(Texts.of(TextColors.RED, "Unable to search for: ", TextColors.YELLOW, query, TextColors.RESET,
-                                        TextColors.RED, "\nError: ", TextColors.GRAY, e.getLocalizedMessage()));
+                            if (!Enquiry.getInstance().game.getEventManager().post(new SearchFailureEvent(src, engine, query))) {
+                                src.sendMessage(Texts.of("An error occurred while attempting to search ", engine.getName(), " for ", TextColors
+                                        .YELLOW, query));
                             }
                         }
                     }
@@ -157,30 +197,5 @@ public class Enquiry {
 
             return CommandResult.success();
         }
-    }
-
-    private List<Text> searchGoogle(String query) throws IOException {
-        if (googleApiKey.isEmpty() || googleSearchId.isEmpty()) {
-            throw new IOException("The Google API or search ID are required in order to perform a Google search.");
-        }
-
-        final String jsonResponse = HttpRequest.get(GOOGLE_URL, true,
-                "key", googleApiKey,
-                "cx", googleSearchId,
-                "fields", "items(title,link,snippet)",
-                "q", query)
-                .accept("application/json")
-                .acceptCharset(StandardCharsets.UTF_8.name())
-                .body();
-        final GoogleResponse response = new Gson().fromJson(jsonResponse, GoogleResponse.class);
-        final List<Text> results = new CopyOnWriteArrayList<>();
-        int i = 1;
-        for (GoogleResult result : response.results) {
-            results.add(Texts.of(i++, ". ", TextColors.GRAY, result.title).builder()
-                    .onClick(new ClickAction.OpenUrl(new URL(result.url)))
-                    .onHover(new HoverAction.ShowText(Texts.of(result.description)))
-                    .build());
-        }
-        return results;
     }
 }

@@ -22,8 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api;
+package org.inspirenxe.enquiry.api.event;
 
+import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.spongepowered.api.event.AbstractEvent;
 import org.spongepowered.api.event.Cancellable;
 import org.spongepowered.api.util.command.CommandSource;
@@ -36,10 +37,14 @@ import org.spongepowered.api.util.command.CommandSource;
  */
 public class SearchEvent extends AbstractEvent implements Cancellable {
     public final CommandSource source;
+    public SearchEngine engine;
+    public String query;
     private boolean cancelled;
 
-    public SearchEvent(CommandSource source) {
+    public SearchEvent(CommandSource source, SearchEngine engine, String query) {
         this.source = source;
+        this.engine = engine;
+        this.query = query;
     }
 
     @Override

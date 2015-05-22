@@ -22,13 +22,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry;
+package org.inspirenxe.enquiry.api.engine;
 
-import com.google.gson.annotations.SerializedName;
+public interface SearchResult {
 
-import java.util.List;
+        /**
+         * Gets the title of the result.
+         * @return The title
+         */
+        String getTitle();
 
-public class GoogleResponse {
-    @SerializedName("items")
-    public List<GoogleResult> results;
+        /**
+         * Gets the description of the result.
+         * @return The description
+         */
+        String getDescription();
+
+        /**
+         * Gets the URL of the result.
+         * @return The url
+         */
+        String getUrl();
 }

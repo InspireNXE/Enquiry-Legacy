@@ -22,9 +22,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api;
+package org.inspirenxe.enquiry.api.event;
 
-import org.spongepowered.api.text.Text;
+import org.inspirenxe.enquiry.api.engine.SearchEngine;
+import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.spongepowered.api.util.command.CommandSource;
 
 import java.util.List;
@@ -35,10 +36,10 @@ import java.util.List;
  * Cancelling will not prevent a search from occurring, only prevent the output of the search results.
  */
 public class SearchSuccessEvent extends SearchEvent {
-    public final List<Text> results;
+    public final List<? extends SearchResult> results;
 
-    public SearchSuccessEvent(CommandSource source, List<Text> results) {
-        super(source);
+    public SearchSuccessEvent(CommandSource source, SearchEngine engine, String query, List<? extends SearchResult> results) {
+        super(source, engine, query);
         this.results = results;
     }
 }
