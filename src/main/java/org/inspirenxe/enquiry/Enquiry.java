@@ -126,7 +126,7 @@ public class Enquiry {
     public static void registerEngines(SearchEngine... searchEngines) {
         for (SearchEngine engine : searchEngines) {
             engines.add(engine);
-            Enquiry.getInstance().logger.info("Registered " + engine.getName());
+            Enquiry.getInstance().logger.info("Registered " + Texts.toPlain(engine.getName()) + " as a search engine.");
         }
     }
 
@@ -142,14 +142,15 @@ public class Enquiry {
             getInstance().game.getAsyncScheduler().runTask(getInstance(), new Runnable() {
                 @Override
                 public void run() {
+                    final CommandSource target = args.<CommandSource>getOne("player").get();
                     final String query = args.<String>getOne("search").get();
-                    final SearchPreEvent preEvent = new SearchPreEvent(src, engine, query);
+                    final SearchPreEvent preEvent = new SearchPreEvent(target, engine, query);
                     if (!getInstance().game.getEventManager().post(preEvent)) {
                         try {
                             final List<? extends SearchResult> results = preEvent.engine.getResults(query);
-                            final SearchSuccessEvent event = new SearchSuccessEvent(src, preEvent.engine, query, results);
+                            final SearchSuccessEvent event = new SearchSuccessEvent(target, preEvent.engine, query, results);
                             if (!getInstance().game.getEventManager().post(event)) {
-                                src.sendMessage(Texts.of(
+                                target.sendMessage(Texts.of(
                                         "(", Texts.of(event.engine.getName()).builder()
                                                 .onClick(new ClickAction.OpenUrl(new URL(event.engine.getUrl())))
                                                 .onHover(new HoverAction.ShowText(Texts.of(event.engine.getUrl())))
@@ -157,7 +158,7 @@ public class Enquiry {
                                         TextColors.RESET, ") Result(s) for: ", TextColors.YELLOW, query));
                                 int i = 1;
                                 for (SearchResult result : event.results) {
-                                    src.sendMessage(Texts.of(i++, ". ", TextColors.GRAY, result.getTitle()).builder()
+                                    target.sendMessage(Texts.of(i++, ". ", TextColors.GRAY, result.getTitle()).builder()
                                             .onClick(new ClickAction.OpenUrl(new URL(result.getUrl())))
                                             .onHover(new HoverAction.ShowText(
                                                     Texts.of(result.getDescription().replaceAll("(.{1,70})( +|$\\n?)|(.{1,70})", "$1$3\n").trim())))
@@ -165,9 +166,11 @@ public class Enquiry {
                                 }
                             }
                         } catch (IOException e) {
-                            if (!getInstance().game.getEventManager().post(new SearchFailureEvent(src, preEvent.engine, query))) {
-                                src.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ", TextColors
+                            if (!getInstance().game.getEventManager().post(new SearchFailureEvent(target, preEvent.engine, query))) {
+                                target.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ", TextColors
                                         .YELLOW, query));
+                                Enquiry.getInstance().logger.warn("An error occurred while attempting to search " + Texts.toPlain(preEvent.engine
+                                                .getName()) + " for " + query, e);
                             }
                         }
                     }

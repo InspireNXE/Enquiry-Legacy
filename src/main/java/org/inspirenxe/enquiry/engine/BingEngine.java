@@ -39,7 +39,6 @@ import org.spongepowered.api.util.command.args.GenericArguments;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class BingEngine implements SearchEngine {
@@ -63,7 +62,7 @@ public class BingEngine implements SearchEngine {
 
     @Override
     public List<String> getAliases() {
-        return ImmutableList.of("bing", "b", "eqb");
+        return ImmutableList.of("bing", "b");
     }
 
     @Override
@@ -89,7 +88,7 @@ public class BingEngine implements SearchEngine {
                 "$top", 10)
                 .basic(bingAppId, bingAppId)
                 .acceptJson()
-                .acceptCharset(StandardCharsets.UTF_8.name());
+                .acceptCharset("UTF-8");
     }
 
     @Override

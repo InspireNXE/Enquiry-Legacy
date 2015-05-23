@@ -39,7 +39,6 @@ import org.spongepowered.api.util.command.args.GenericArguments;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class GoogleEngine implements SearchEngine {
@@ -69,7 +68,7 @@ public class GoogleEngine implements SearchEngine {
 
     @Override
     public List<String> getAliases() {
-        return ImmutableList.of("google", "g", "eqg");
+        return ImmutableList.of("google", "g");
     }
 
     @Override
@@ -95,7 +94,7 @@ public class GoogleEngine implements SearchEngine {
                 "fields", "items(title,link,snippet)",
                 "q", query)
                 .acceptJson()
-                .acceptCharset(StandardCharsets.UTF_8.name());
+                .acceptCharset("UTF-8");
     }
 
     @Override
