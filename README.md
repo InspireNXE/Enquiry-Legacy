@@ -5,8 +5,8 @@ A simple plugin that allows you to search the web within Minecraft. It is licens
 * [Discussion]
 * [Source]
 * [Issues]
-* [Wiki](wiki)
-* [Commands](wiki/Commands)
+* [Wiki](https://github.com/InspireNXE/Enquiry/wiki)
+* [Commands](https://github.com/InspireNXE/Enquiry/wiki/Commands)
 * [Download]
 
 ### Prerequisites
