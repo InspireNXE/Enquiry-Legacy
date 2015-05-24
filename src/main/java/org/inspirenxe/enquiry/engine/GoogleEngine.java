@@ -25,10 +25,8 @@
 package org.inspirenxe.enquiry.engine;
 
 import com.github.kevinsawicki.http.HttpRequest;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.engine.SearchResult;
@@ -41,17 +39,25 @@ import org.spongepowered.api.util.command.spec.CommandSpec;
 import java.io.IOException;
 import java.util.List;
 
-public class GoogleEngine implements SearchEngine {
-    private final CommentedConfigurationNode googleConfigurationNode = Enquiry.getInstance().rootNode.getNode("google");
-    private final String googleApiKey = googleConfigurationNode.getNode("api-key").getString("");
-    private final String googleSearchId = googleConfigurationNode.getNode("search-id").getString("");
-    private final CommandSpec commandSpec = CommandSpec.builder()
-            .description(Texts.of("Searches ", getName(), " for the query provided."))
-            .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), Enquiry.getInstance().game),
-                    GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
-            .permission("enquiry.command.search.google")
-            .executor(new Enquiry.SearchCommandExecutor(this))
-            .build();
+public class GoogleEngine extends SearchEngine {
+
+    private final Enquiry enquiry;
+    private final CommandSpec commandSpec;
+    private final String apiKey, searchId;
+
+    public GoogleEngine(Enquiry enquiry, String... aliases) {
+        super(enquiry, aliases);
+        this.enquiry = enquiry;
+        this.commandSpec = CommandSpec.builder()
+                .description(Texts.of("Searches ", getName(), " for the query provided."))
+                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), this.enquiry.game),
+                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
+                .permission("enquiry.command.search.google")
+                .executor(new Enquiry.SearchCommandExecutor(enquiry, this))
+                .build();
+        this.apiKey = this.enquiry.rootNode.getNode("google", "api-key").getString("");
+        this.searchId = this.enquiry.rootNode.getNode("google", "search-id").getString("");
+    }
 
     @SerializedName("items")
     private List<GoogleResult> results;
@@ -67,18 +73,13 @@ public class GoogleEngine implements SearchEngine {
     }
 
     @Override
-    public List<String> getAliases() {
-        return ImmutableList.of("google", "g");
-    }
-
-    @Override
     public CommandSpec getCommandSpec() {
         return commandSpec;
     }
 
     @Override
     public String getUrl() {
-        return "https://www.google.com";
+        return "https://google.com";
     }
 
     @Override
@@ -89,8 +90,8 @@ public class GoogleEngine implements SearchEngine {
     @Override
     public HttpRequest getRequest(String query) {
         return HttpRequest.get(getSearchUrl(), true,
-                "key", this.googleApiKey,
-                "cx", this.googleSearchId,
+                "key", this.apiKey,
+                "cx", this.searchId,
                 "fields", "items(title,link,snippet)",
                 "q", query)
                 .acceptJson()
@@ -99,13 +100,11 @@ public class GoogleEngine implements SearchEngine {
 
     @Override
     public List<? extends SearchResult> getResults(String query) throws IOException {
-        if (this.googleApiKey.isEmpty()) {
-            throw new IOException("google.api-key in " + Enquiry.getInstance().defaultConfig.getCanonicalPath() + " must be set in order to"
-                    + "search with Google!");
+        if (this.apiKey.isEmpty()) {
+            throw new IOException("google.api-key in ./config/enquiry.conf must be set in order to search with Google!");
         }
-        if (this.googleSearchId.isEmpty()) {
-            throw new IOException("google.search-id in " + Enquiry.getInstance().defaultConfig.getCanonicalPath() + " must be set in order to "
-                    + "search with Google!");
+        if (this.searchId.isEmpty()) {
+            throw new IOException("google.search-id in ./config/enquiry.conf must be set in order to search with Google!");
         }
         return new Gson().fromJson(getRequest(query).body(), GoogleEngine.class).results;
     }

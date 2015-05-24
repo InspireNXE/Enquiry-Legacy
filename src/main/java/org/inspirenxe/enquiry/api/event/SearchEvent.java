@@ -36,6 +36,7 @@ import org.spongepowered.api.util.command.CommandSource;
  * caution should ultimately be taken in that regard.
  */
 public class SearchEvent extends AbstractEvent implements Cancellable {
+
     public final CommandSource source;
     public SearchEngine engine;
     public String query;

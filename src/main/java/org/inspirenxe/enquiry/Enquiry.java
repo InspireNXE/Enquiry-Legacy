@@ -27,10 +27,12 @@ package org.inspirenxe.enquiry;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.engine.SearchResult;
+import org.inspirenxe.enquiry.api.event.SearchEngineRegistrationEvent;
 import org.inspirenxe.enquiry.api.event.SearchFailureEvent;
 import org.inspirenxe.enquiry.api.event.SearchPreEvent;
 import org.inspirenxe.enquiry.api.event.SearchSuccessEvent;
@@ -39,7 +41,6 @@ import org.inspirenxe.enquiry.engine.GoogleEngine;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.event.Subscribe;
-import org.spongepowered.api.event.state.ConstructionEvent;
 import org.spongepowered.api.event.state.ServerAboutToStartEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.service.config.DefaultConfig;
@@ -66,90 +67,82 @@ import java.util.Set;
 @NonnullByDefault
 public class Enquiry {
 
-    private static final Set<SearchEngine> engines = Sets.newHashSet();
-
-    private static Enquiry instance;
-
     @Inject public Game game;
     @Inject public Logger logger;
 
-    @Inject
-    @DefaultConfig(sharedRoot = true)
-    public File defaultConfig;
-
-    @Inject
-    @DefaultConfig(sharedRoot = true)
-    private ConfigurationLoader<CommentedConfigurationNode> configManager;
-
     public CommentedConfigurationNode rootNode;
 
-    @Subscribe
-    public void onConstruction(ConstructionEvent event) {
-        instance = this;
-    }
+    @DefaultConfig(sharedRoot = true)
+    @Inject private File defaultConfig;
+
+    @DefaultConfig(sharedRoot = true)
+    @Inject private ConfigurationLoader<CommentedConfigurationNode> loader;
+
+    private final Set<SearchEngine> engines = Sets.newHashSet();
 
     @Subscribe
     public void onServerAboutToStart(ServerAboutToStartEvent event) throws IOException {
         // Setup configuration
         if (!defaultConfig.exists()) {
             this.defaultConfig.createNewFile();
-            this.rootNode = this.configManager.load();
-            this.rootNode.getNode("bing", "app-id")
-                    .setValue("")
-                    .setComment("The app ID from your Microsoft account <https://msdn.microsoft.com/en-us/library/dd251020.aspx>");
-            this.rootNode.getNode("google", "api-key")
-                    .setValue("")
-                    .setComment("The API key from your Google account <https://developers.google.com/console/help/#generatingdevkeys>");
-            this.rootNode.getNode("google", "search-id")
-                    .setValue("")
-                    .setComment("The custom search engine ID from your Google account <https://support.google"
-                            + ".com/customsearch/answer/2649143?hl=en>");
-            this.configManager.save(rootNode);
+            this.rootNode = this.loader.createEmptyNode(ConfigurationOptions.defaults());
+            this.rootNode.getNode("bing").setComment("For help getting the api key and search engine id, please reference the wiki guide for "
+                    + "setting up Bing <https://github.com/InspireNXE/Enquiry/wiki/Bing-(Setup)>");
+            this.rootNode.getNode("bing", "app-id").setValue("");
+            this.rootNode.getNode("google").setComment("For help getting the api key and search engine id, please reference the wiki guide for "
+                    + "setting up Google <https://github.com/InspireNXE/Enquiry/wiki/Google-(Setup)>");
+            this.rootNode.getNode("google", "api-key").setValue("");
+            this.rootNode.getNode("google", "search-id").setValue("");
+            this.loader.save(rootNode);
         }
-        this.rootNode = this.configManager.load();
+        this.rootNode = this.loader.load();
 
-        // Register default engines
-        registerEngines(new BingEngine(), new GoogleEngine());
+        // Fire SearchEngineRegistrationEvent to register search engines
+        this.game.getEventManager().post(new SearchEngineRegistrationEvent(engines));
 
+        // Register commands for registered engines
         final Map<List<String>, CommandSpec> children = Maps.newHashMap();
         for (SearchEngine engine : engines) {
             this.game.getCommandDispatcher().register(this, engine.getCommandSpec(), engine.getAliases());
             children.put(engine.getAliases(), engine.getCommandSpec());
+            this.logger.info("Registered [" + Texts.toPlain(engine.getName()) + "] with aliases " + engine.getAliases());
         }
         this.game.getCommandDispatcher().register(this, CommandSpec.builder().children(children).build(), "enquiry", "eq");
     }
 
-    public static Enquiry getInstance() {
-        return instance;
+    @Subscribe
+    public void onSearchEngineRegistrationEvent(SearchEngineRegistrationEvent event) {
+        new BingEngine(this, "bing", "b").register();
+        new GoogleEngine(this, "google", "g").register();
     }
 
-    public static void registerEngines(SearchEngine... searchEngines) {
-        for (SearchEngine engine : searchEngines) {
-            engines.add(engine);
-            Enquiry.getInstance().logger.info("Registered " + Texts.toPlain(engine.getName()) + " as a search engine.");
-        }
+    public SearchEngine putEngine(SearchEngine engine) {
+        this.engines.add(engine);
+        return engine;
     }
 
     public static class SearchCommandExecutor implements CommandExecutor {
-        private SearchEngine engine;
+        private final Enquiry enquiry;
+        private final SearchEngine engine;
 
-        public SearchCommandExecutor(SearchEngine engine) {
+        public SearchCommandExecutor(Enquiry enquiry, SearchEngine engine) {
+            this.enquiry = enquiry;
             this.engine = engine;
         }
 
         @Override
         public CommandResult execute(final CommandSource src, final CommandContext args) throws CommandException {
-            getInstance().game.getAsyncScheduler().runTask(getInstance(), new Runnable() {
+            this.enquiry.game.getAsyncScheduler().runTask(this.enquiry, new Runnable() {
                 @Override
                 public void run() {
                     final CommandSource target = args.<CommandSource>getOne("player").get();
                     final String query = args.<String>getOne("search").get();
                     final SearchPreEvent preEvent = new SearchPreEvent(target, engine, query);
-                    if (!getInstance().game.getEventManager().post(preEvent)) {
+                    if (!enquiry.game.getEventManager().post(preEvent)) {
                         try {
                             final List<? extends SearchResult> results = preEvent.engine.getResults(query);
                             final SearchSuccessEvent event = new SearchSuccessEvent(target, preEvent.engine, query, results);
-                            if (!getInstance().game.getEventManager().post(event)) {
+                            if (!enquiry.game.getEventManager().post(event)) {
                                 target.sendMessage(Texts.of(
                                         "(", Texts.of(event.engine.getName()).builder()
                                                 .onClick(new ClickAction.OpenUrl(new URL(event.engine.getUrl())))
@@ -166,11 +159,12 @@ public class Enquiry {
                                 }
                             }
                         } catch (IOException e) {
-                            if (!getInstance().game.getEventManager().post(new SearchFailureEvent(target, preEvent.engine, query))) {
-                                target.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ", TextColors
-                                        .YELLOW, query));
-                                Enquiry.getInstance().logger.warn("An error occurred while attempting to search " + Texts.toPlain(preEvent.engine
-                                                .getName()) + " for " + query, e);
+                            if (!enquiry.game.getEventManager().post(new SearchFailureEvent(target, preEvent.engine, query))) {
+                                target.sendMessage(
+                                        Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ", TextColors
+                                                .YELLOW, query));
+                                enquiry.logger.warn("An error occurred while attempting to search " + Texts.toPlain(preEvent.engine
+                                        .getName()) + " for " + query, e);
                             }
                         }
                     }

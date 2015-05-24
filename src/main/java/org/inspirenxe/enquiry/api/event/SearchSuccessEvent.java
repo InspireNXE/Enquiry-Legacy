@@ -36,6 +36,7 @@ import java.util.List;
  * Cancelling will not prevent a search from occurring, only prevent the output of the search results.
  */
 public class SearchSuccessEvent extends SearchEvent {
+
     public final List<? extends SearchResult> results;
 
     public SearchSuccessEvent(CommandSource source, SearchEngine engine, String query, List<? extends SearchResult> results) {

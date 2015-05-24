@@ -5,6 +5,8 @@ A simple plugin that allows you to search the web within Minecraft. It is licens
 * [Discussion]
 * [Source]
 * [Issues]
+* [Wiki](wiki)
+* [Commands](wiki/Commands)
 * [Download]
 
 ### Prerequisites
@@ -18,34 +20,23 @@ A simple plugin that allows you to search the web within Minecraft. It is licens
 * Add search engines through an API
 * Specify a player name to send the results to that player
 
-### Commands
-**Note 1:** Values with `|` simply indicates another option following it. Arguments with `[]` are optional while arguments with `<>` are required. 
-**Note 2:** Any engines registered through Enquiry's API will follow the same styling for permissions and commands. Simply replace one of the default engine names with one that a registered engine is using in the commands and permissions below.
-
-|                        Command                       | Description                                 | Permission                             | Aliases                          |
-|:----------------------------------------------------:|:--------------------------------------------|:---------------------------------------|:---------------------------------|
-| `/enquiry <bing|google|b|g> [player] <search terms>` | Searches the engine for the query provided. | `enquiry.command.search.<bing|google>` | `enquiry|eq <bing|google|b|g>`   |
-| `/<bing|google|b|g> [player] <search terms>`         | Searches the engine for the query provided. | `enquiry.command.search.<bing|google>` | `bing, google, g, b`             |
-
 ### Configuration
-**Note:** In order to use each search engine, these values must have a valid value added to the in `./config/enquiry.conf`
+**Note:** For how to get the appropriate values for each search engine, please visit our [wiki](wiki/).
 
 ```
+# For help getting the app id, please reference the wiki guide for setting up Bing <https://github.com/InspireNXE/Enquiry/wiki/Bing-(Setup)>
 bing {
-    # The app ID from your Microsoft account <https://msdn.microsoft.com/en-us/library/dd251020.aspx>
     app-id=""
 }
+# For help getting the api key and search engine id, please reference the wiki guide for setting up Google <https://github.com/InspireNXE/Enquiry/wiki/Google-(Setup)>
 google {
-    # The API key from your Google account <https://developers.google.com/console/help/#generatingdevkeys>
     api-key=""
-    # The custom search engine ID from your Google account <https://support.google.com/customsearch/answer/2649143?hl=en>
     search-id=""
 }
 ```
 
 ### Building
-**Note:** If you do not have [Gradle] installed then use `./gradlew` for Unix systems or Git Bash and `gradlew.bat` for Windows systems in place of 
-any `gradle` command.
+**Note:** If you do not have [Gradle] installed then use `./gradlew` for Unix systems or Git Bash and `gradlew.bat` for Windows systems in place of any `gradle` command.
 
 To build Enquiry, simply run `gradle`. The compiled jar is located in `./libs/`.
 

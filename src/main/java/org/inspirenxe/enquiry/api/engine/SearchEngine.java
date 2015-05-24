@@ -25,55 +25,86 @@
 package org.inspirenxe.enquiry.api.engine;
 
 import com.github.kevinsawicki.http.HttpRequest;
+import com.google.common.collect.Lists;
+import org.inspirenxe.enquiry.Enquiry;
+import org.inspirenxe.enquiry.api.event.SearchEngineRegisterEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
-public interface SearchEngine {
+public abstract class SearchEngine {
 
-    /**
-     * Gets the name of the engine.
-     * @return The name
-     */
-    Text getName();
+    private final Enquiry enquiry;
+    private final List<String> aliases = Lists.newArrayList();
 
-    /**
-     * Gets the {@link CommandSpec} of the engine.
-     * @return The {@link CommandSpec}
-     */
-    CommandSpec getCommandSpec();
+    public SearchEngine(Enquiry enquiry, String... aliases) {
+        this.enquiry = enquiry;
+        Collections.addAll(this.aliases, aliases);
+    }
 
     /**
      * Gets the aliases
      * @return The aliases
      */
-    List<String> getAliases();
+    public List<String> getAliases() {
+        return aliases;
+    }
+
+    public SearchEngine register() {
+        if (!enquiry.game.getEventManager().post(new SearchEngineRegisterEvent(this))) {
+            enquiry.putEngine(this);
+        }
+        return this;
+    }
+
+    /**
+     * Gets the name of the engine.
+     * @return The name
+     */
+    public abstract Text getName();
+
+    /**
+     * Gets the {@link CommandSpec} of the engine.
+     * @return The {@link CommandSpec}
+     */
+    public abstract CommandSpec getCommandSpec();
 
     /**
      * Gets the URL of the engine's website.
      * @return The engine's website URL
      */
-    String getUrl();
+    public abstract String getUrl();
 
     /**
      * Gets the URL of the engine's search API url.
      * @return The engine's search API url
      */
-    String getSearchUrl();
+    public abstract String getSearchUrl();
 
     /**
      * Gets the {@link HttpRequest} of the engine.
      * @param query The query
      * @return The request
      */
-    HttpRequest getRequest(String query);
+    public abstract HttpRequest getRequest(String query);
 
     /**
      * Gets a list of {@link SearchResult}.
      * @param query The query
      * @return The list of results
      */
-    List<? extends SearchResult> getResults(String query) throws IOException;
+    public abstract List<? extends SearchResult> getResults(String query) throws IOException;
+
+    @Override
+    public int hashCode() {
+        return this.getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this == obj || !(obj == null || getClass() != obj.getClass()) && this.getName().equals(((SearchEngine) obj).getName());
+    }
 }
