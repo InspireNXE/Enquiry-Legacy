@@ -40,6 +40,7 @@ import org.inspirenxe.enquiry.engine.BingEngine;
 import org.inspirenxe.enquiry.engine.GoogleEngine;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
+import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.Subscribe;
 import org.spongepowered.api.event.state.ServerAboutToStartEvent;
 import org.spongepowered.api.plugin.Plugin;
@@ -110,8 +111,8 @@ public class Enquiry {
         this.game.getCommandDispatcher().register(this, CommandSpec.builder().children(children).build(), "enquiry", "eq");
     }
 
-    @Subscribe
-    public void onSearchEngineRegistrationEvent(SearchEngineRegistrationEvent event) {
+    @Subscribe(order = Order.PRE)
+    public void onSearchEngineRegistration(SearchEngineRegistrationEvent event) {
         new BingEngine(this, "bing", "b").register();
         new GoogleEngine(this, "google", "g").register();
     }
