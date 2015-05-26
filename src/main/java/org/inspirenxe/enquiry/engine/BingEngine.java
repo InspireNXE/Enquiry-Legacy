@@ -24,6 +24,7 @@
  */
 package org.inspirenxe.enquiry.engine;
 
+
 import com.github.kevinsawicki.http.HttpRequest;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -33,43 +34,26 @@ import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.format.TextColors;
-import org.spongepowered.api.util.command.args.GenericArguments;
-import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BingEngine extends SearchEngine {
 
-    private final Enquiry enquiry;
-    private final CommandSpec commandSpec;
-    private final String appId;
-
-    public BingEngine(Enquiry enquiry, String... aliases) {
-        super(enquiry, aliases);
-        this.enquiry = enquiry;
-        this.commandSpec = CommandSpec.builder()
-                .description(Texts.of("Searches ", getName(), " for the query provided."))
-                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), this.enquiry.game),
-                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
-                .permission("enquiry.command.search.google")
-                .executor(new Enquiry.SearchCommandExecutor(enquiry, this))
-                .build();
-        this.appId = this.enquiry.rootNode.getNode("bing", "app-id").getString("");
-    }
-
-
+    private final String accountKey;
     @SerializedName("d")
     private BingData data;
 
-    @Override
-    public Text getName() {
-        return Texts.of(TextColors.BLUE, "Bing");
+    public BingEngine(Enquiry enquiry, String id, String... aliases) {
+        super(enquiry, id, aliases);
+        this.accountKey = enquiry.storage.getChildNode("engines.bing.auth.account-key").getString("");
     }
 
     @Override
-    public CommandSpec getCommandSpec() {
-        return commandSpec;
+    public Text getName() {
+        return Texts.of(TextColors.GRAY, "Bing");
     }
 
     @Override
@@ -88,22 +72,30 @@ public class BingEngine extends SearchEngine {
                 "Query", "\'" + query + "\'",
                 "$format", "json",
                 "$top", 10)
-                .basic(this.appId, this.appId)
+                .basic(this.accountKey, this.accountKey)
                 .acceptJson()
-                .acceptCharset("UTF-8");
+                .acceptCharset(StandardCharsets.UTF_8.name());
     }
 
     @Override
-    public List<? extends SearchResult> getResults(String query) throws IOException {
-        if (this.appId.isEmpty()) {
-            throw new IOException("bing.app-id in ./config/enquiry.conf must be set in order to search with Bing!");
+    public CopyOnWriteArrayList<? extends SearchResult> getResults(String query) throws IOException {
+        if (this.accountKey.isEmpty()) {
+            throw new IOException("engines.bing.auth.account-key in ./config/enquiry.conf must be set in order to search with Bing!");
         }
-        return new Gson().fromJson(getRequest(query).body(), BingData.class).results;
+        final HttpRequest request = getRequest(query);
+        if (request.code() != 200) {
+            throw new IOException("An error occurred while attempting to get results from " + Texts.toPlain(this.getName()) + ", Error: " + request
+                    .code());
+        } else if (request.isBodyEmpty()) {
+            throw new IOException("An error occurred while attempting to get results from " + Texts.toPlain(this.getName()) + ", Error: Body is "
+                    + "empty.");
+        }
+        return new Gson().fromJson(request.body(), BingEngine.class).data.results;
     }
 
     private class BingData {
         @SerializedName("results")
-        private List<BingResult> results;
+        private CopyOnWriteArrayList<BingResult> results;
     }
 
     public class BingResult implements SearchResult {

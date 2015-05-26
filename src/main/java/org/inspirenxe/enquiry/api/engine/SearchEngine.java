@@ -24,25 +24,62 @@
  */
 package org.inspirenxe.enquiry.api.engine;
 
+import static org.spongepowered.api.util.command.args.GenericArguments.playerOrSource;
+import static org.spongepowered.api.util.command.args.GenericArguments.remainingJoinedStrings;
+import static org.spongepowered.api.util.command.args.GenericArguments.seq;
+
 import com.github.kevinsawicki.http.HttpRequest;
 import com.google.common.collect.Lists;
 import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.event.SearchEngineRegisterEvent;
+import org.inspirenxe.enquiry.api.event.SearchEngineRegistrationEvent;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class SearchEngine {
 
     private final Enquiry enquiry;
+    private final String id;
     private final List<String> aliases = Lists.newArrayList();
+    private final CommandSpec commandSpec;
 
-    public SearchEngine(Enquiry enquiry, String... aliases) {
+    public SearchEngine(Enquiry enquiry, String id, String... aliases) {
         this.enquiry = enquiry;
+        this.id = id;
         Collections.addAll(this.aliases, aliases);
+        commandSpec = CommandSpec.builder()
+                .description(Texts.of("Searches ", getName(), " for the query provided."))
+                .arguments(seq(playerOrSource(Texts.of("player"), enquiry.game)), remainingJoinedStrings(Texts.of("search")))
+                .permission("enquiry.command.search." + getId())
+                .executor(new Enquiry.SearchCommandExecutor(enquiry, this))
+                .build();
+    }
+
+    /**
+     * Registers the search engine
+     * <p>
+     * This method should only be fired during {@link SearchEngineRegistrationEvent}
+     * @return The {@link SearchEngine}
+     */
+    public SearchEngine register() {
+        if (!this.enquiry.game.getEventManager().post(new SearchEngineRegisterEvent(this))) {
+            this.enquiry.putEngine(this);
+        }
+        return this;
+    }
+
+    /**
+     * Gets the id of the engine
+     * @return The ID
+     */
+    public String getId() {
+        return this.id;
     }
 
     /**
@@ -50,14 +87,15 @@ public abstract class SearchEngine {
      * @return The aliases
      */
     public List<String> getAliases() {
-        return aliases;
+        return this.aliases;
     }
 
-    public SearchEngine register() {
-        if (!enquiry.game.getEventManager().post(new SearchEngineRegisterEvent(this))) {
-            enquiry.putEngine(this);
-        }
-        return this;
+    /**
+     * Gets the {@link CommandSpec} of the engine.
+     * @return The {@link CommandSpec}
+     */
+    public CommandSpec getCommandSpec() {
+        return commandSpec;
     }
 
     /**
@@ -65,12 +103,6 @@ public abstract class SearchEngine {
      * @return The name
      */
     public abstract Text getName();
-
-    /**
-     * Gets the {@link CommandSpec} of the engine.
-     * @return The {@link CommandSpec}
-     */
-    public abstract CommandSpec getCommandSpec();
 
     /**
      * Gets the URL of the engine's website.
@@ -87,16 +119,18 @@ public abstract class SearchEngine {
     /**
      * Gets the {@link HttpRequest} of the engine.
      * @param query The query
-     * @return The request
+     * @return The {@link HttpRequest}
      */
     public abstract HttpRequest getRequest(String query);
 
     /**
+     /**
      * Gets a list of {@link SearchResult}.
      * @param query The query
      * @return The list of results
+     * @throws IOException Thrown when an error occurred while getting results
      */
-    public abstract List<? extends SearchResult> getResults(String query) throws IOException;
+    public abstract CopyOnWriteArrayList<? extends SearchResult> getResults(String query) throws IOException;
 
     @Override
     public int hashCode() {

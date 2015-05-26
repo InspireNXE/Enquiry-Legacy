@@ -33,34 +33,24 @@ import org.inspirenxe.enquiry.api.engine.SearchResult;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.format.TextColors;
-import org.spongepowered.api.util.command.args.GenericArguments;
-import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GoogleEngine extends SearchEngine {
 
-    private final Enquiry enquiry;
-    private final CommandSpec commandSpec;
     private final String apiKey, searchId;
 
-    public GoogleEngine(Enquiry enquiry, String... aliases) {
-        super(enquiry, aliases);
-        this.enquiry = enquiry;
-        this.commandSpec = CommandSpec.builder()
-                .description(Texts.of("Searches ", getName(), " for the query provided."))
-                .arguments(GenericArguments.seq(GenericArguments.playerOrSource(Texts.of(TextColors.AQUA, "player"), this.enquiry.game),
-                        GenericArguments.remainingJoinedStrings(Texts.of(TextColors.GOLD, "search"))))
-                .permission("enquiry.command.search.google")
-                .executor(new Enquiry.SearchCommandExecutor(enquiry, this))
-                .build();
-        this.apiKey = this.enquiry.rootNode.getNode("google", "api-key").getString("");
-        this.searchId = this.enquiry.rootNode.getNode("google", "search-id").getString("");
+    public GoogleEngine(Enquiry enquiry, String id, String... aliases) {
+        super(enquiry, id, aliases);
+        this.apiKey = enquiry.storage.getChildNode("engines.google.auth.api-key").getString("");
+        this.searchId = enquiry.storage.getChildNode("engines.google.auth.search-id").getString("");
     }
 
     @SerializedName("items")
-    private List<GoogleResult> results;
+    private CopyOnWriteArrayList<GoogleResult> results;
 
     @Override
     public Text getName() {
@@ -70,11 +60,6 @@ public class GoogleEngine extends SearchEngine {
                 TextColors.BLUE, "g",
                 TextColors.GREEN, "l",
                 TextColors.RED, "e");
-    }
-
-    @Override
-    public CommandSpec getCommandSpec() {
-        return commandSpec;
     }
 
     @Override
@@ -95,21 +80,30 @@ public class GoogleEngine extends SearchEngine {
                 "fields", "items(title,link,snippet)",
                 "q", query)
                 .acceptJson()
-                .acceptCharset("UTF-8");
+                .acceptCharset(StandardCharsets.UTF_8.name());
     }
 
     @Override
-    public List<? extends SearchResult> getResults(String query) throws IOException {
+    public CopyOnWriteArrayList<? extends SearchResult> getResults(String query) throws IOException {
         if (this.apiKey.isEmpty()) {
-            throw new IOException("google.api-key in ./config/enquiry.conf must be set in order to search with Google!");
+            throw new IOException("engines.google.auth.api-key in ./config/enquiry.conf must be set in order to search with Google!");
         }
         if (this.searchId.isEmpty()) {
-            throw new IOException("google.search-id in ./config/enquiry.conf must be set in order to search with Google!");
+            throw new IOException("engines.google.auth.search-id in ./config/enquiry.conf must be set in order to search with Google!");
         }
-        return new Gson().fromJson(getRequest(query).body(), GoogleEngine.class).results;
+        final HttpRequest request = getRequest(query);
+        if (request.code() != 200) {
+            throw new IOException("An error occurred while attempting to get results from " + Texts.toPlain(this.getName()) + ", Error: " + request
+                    .code());
+        } else if (request.isBodyEmpty()) {
+            throw new IOException("An error occurred while attempting to get results from " + Texts.toPlain(this.getName()) + ", Error: Body is "
+                    + "empty.");
+        }
+        return new Gson().fromJson(request.body(), GoogleEngine.class).results;
     }
 
     public class GoogleResult implements SearchResult {
+        @SerializedName("title")
         private String title;
 
         @SerializedName("snippet")
