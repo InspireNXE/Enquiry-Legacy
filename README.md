@@ -18,11 +18,14 @@ A simple plugin that allows you to search the web within Minecraft. It is licens
 ### Features
 * Ability to search [Bing]
 * Ability to search [Google]
+* ([**Planned**](https://github.com/InspireNXE/Enquiry/issues/1)) Ability to search [DuckDuckGo]
+* ([**Planned**](https://github.com/InspireNXE/Enquiry/issues/2)) Ability to search [Wolfram Alpha]
 * Click results and open them in the default web browser
 * Add search engines through an API
 * Specify aliases through the configuration file
 * Fires events to allow other plugins to listen, modify and cancel results
 * Send search results to another player
+* (**Planned**) Multi-page results
 
 ### Building
 **Note:** If you do not have [Gradle] installed then use `./gradlew` for Unix systems or Git Bash and `gradlew.bat` for Windows systems in place of any `gradle` command.
@@ -34,7 +37,8 @@ To build Enquiry, simply run `gradle`. The compiled jar is located in `./libs/`.
 [Configuration]: https://github.com/InspireNXE/Enquiry/wiki/Configuration
 [Discussion]: https://forums.spongepowered.org/t/enquiry-search-to-your-hearts-content-v1-0/7332
 [Donate]: https://www.patreon.com/Grinch
-[Download]: http://assets.inspirenxe.org/files/enquiry/enquiry-latest.jar
+[Download]: https://github.com/InspireNXE/Enquiry/releases/latest
+[DuckDuckGo]: https://duckduckgo.com
 [Google]: https://www.google.com
 [Gradle]: http://www.gradle.org
 [Issues]: https://github.com/InspireNXE/Enquiry/issues
@@ -42,3 +46,4 @@ To build Enquiry, simply run `gradle`. The compiled jar is located in `./libs/`.
 [MIT License]: http://www.tldrlegal.com/license/mit-license
 [Source]: https://github.com/InspireNXE/Enquiry/
 [Wiki]: https://github.com/InspireNXE/Enquiry/wiki
+[Wolfram Alpha]: https://www.wolframalpha.com/
