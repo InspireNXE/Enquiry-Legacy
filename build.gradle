@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '1.2.1'
 }
 
-defaultTasks 'clean', 'build', 'licenseFormat'
+defaultTasks 'clean', 'build'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -37,8 +37,6 @@ shadowJar {
     classifier = ''
 }
 
-build.dependsOn shadowJar
-
 license {
     ext.name = project.name
     ext.organization = organization
@@ -46,10 +44,14 @@ license {
     header rootProject.file('HEADER.txt')
     ignoreFailures true
     strictCheck true
-    includes(['**/*.java'])
+    include '**/*.java'
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    from javadoc.destinationDir
-    classifier = "javadoc"
+build.dependsOn shadowJar
+build.dependsOn licenseFormatMain
+
+if (JavaVersion.current().isJava8Compatible() || JavaVersion.current().isJava9Compatible()) {
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
 }

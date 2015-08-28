@@ -37,7 +37,6 @@ import org.spongepowered.api.text.format.TextColors;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BingEngine extends SearchEngine {
@@ -46,9 +45,9 @@ public class BingEngine extends SearchEngine {
     @SerializedName("d")
     private BingData data;
 
-    public BingEngine(Enquiry enquiry, String id, String... aliases) {
-        super(enquiry, id, aliases);
-        this.accountKey = enquiry.storage.getChildNode("engines.bing.auth.account-key").getString("");
+    public BingEngine(String id, String... aliases) {
+        super(Enquiry.instance.container, id, aliases);
+        this.accountKey = Enquiry.instance.storage.getChildNode("engines.bing.auth.account-key").getString("");
     }
 
     @Override

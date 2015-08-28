@@ -36,17 +36,16 @@ import org.spongepowered.api.text.format.TextColors;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GoogleEngine extends SearchEngine {
 
     private final String apiKey, searchId;
 
-    public GoogleEngine(Enquiry enquiry, String id, String... aliases) {
-        super(enquiry, id, aliases);
-        this.apiKey = enquiry.storage.getChildNode("engines.google.auth.api-key").getString("");
-        this.searchId = enquiry.storage.getChildNode("engines.google.auth.search-id").getString("");
+    public GoogleEngine(String id, String... aliases) {
+        super(Enquiry.instance.container, id, aliases);
+        this.apiKey = Enquiry.instance.storage.getChildNode("engines.google.auth.api-key").getString("");
+        this.searchId = Enquiry.instance.storage.getChildNode("engines.google.auth.search-id").getString("");
     }
 
     @SerializedName("items")

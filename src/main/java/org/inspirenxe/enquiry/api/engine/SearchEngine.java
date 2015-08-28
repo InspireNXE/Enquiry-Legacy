@@ -33,31 +33,85 @@ import com.google.common.collect.Lists;
 import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.event.SearchEngineRegisterEvent;
 import org.inspirenxe.enquiry.api.event.SearchEngineRegistrationEvent;
+import org.inspirenxe.enquiry.api.event.SearchFailureEvent;
+import org.inspirenxe.enquiry.api.event.SearchPreEvent;
+import org.inspirenxe.enquiry.api.event.SearchSuccessEvent;
+import org.spongepowered.api.entity.player.Player;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
+import org.spongepowered.api.text.action.TextActions;
+import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.util.command.CommandResult;
+import org.spongepowered.api.util.command.CommandSource;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class SearchEngine {
-
-    private final Enquiry enquiry;
+    private final PluginContainer plugin;
     private final String id;
     private final List<String> aliases = Lists.newArrayList();
     private final CommandSpec commandSpec;
 
-    public SearchEngine(Enquiry enquiry, String id, String... aliases) {
-        this.enquiry = enquiry;
+    @SuppressWarnings("deprecation")
+    public SearchEngine(PluginContainer plugin, String id, String... aliases) {
+        this.plugin = plugin;
         this.id = id;
         Collections.addAll(this.aliases, aliases);
+        final SearchEngine engine = this;
         commandSpec = CommandSpec.builder()
                 .description(Texts.of("Searches ", getName(), " for the query provided."))
-                .arguments(seq(playerOrSource(Texts.of("player"), enquiry.game)), remainingJoinedStrings(Texts.of("search")))
-                .permission("enquiry.command.search." + getId())
-                .executor(new Enquiry.SearchCommandExecutor(enquiry, this))
+                .arguments(seq(playerOrSource(Texts.of("player"), Enquiry.instance.game)), remainingJoinedStrings(Texts.of("search")))
+                .permission(plugin.getId() + ".command.search." + getId())
+                .executor((src, args) -> {
+                    Enquiry.instance.game.getScheduler().createTaskBuilder().async().execute(() -> {
+                        final CommandSource target = args.<Player>getOne("player").get();
+                        final String query = args.<String>getOne("search").get();
+                        final SearchPreEvent preEvent = new SearchPreEvent(target, engine, query);
+
+                        if (!Enquiry.instance.game.getEventManager().post(preEvent)) {
+                            try {
+                                final List<? extends SearchResult> results = preEvent.engine.getResults(query);
+                                final SearchSuccessEvent event = new SearchSuccessEvent(target, preEvent.engine, query, results);
+                                if (!Enquiry.instance.game.getEventManager().post(event)) {
+                                    target.sendMessage(Texts.of(
+                                            "(", Texts.of(event.engine.getName()).builder()
+                                                    .onClick(TextActions.openUrl(new URL(event.engine.getUrl())))
+                                                    .onHover(TextActions.showText(Texts.of(event.engine.getUrl())))
+                                                    .build(),
+                                            TextColors.RESET, ") Result(s) for: ", TextColors.YELLOW, query));
+                                    int i = 1;
+                                    for (SearchResult result : event.results) {
+                                        final String resultMessage = Enquiry.instance.storage.getChildNode("engines." + event.engine.getId() + ".options.style"
+                                                + ".line-format").getString()
+                                                .replace("${resultNumber}", Integer.toString(i++))
+                                                .replace("${resultTitle}", result.getTitle())
+                                                .trim();
+                                        target.sendMessage(Texts.builder().append(Texts.of(Texts.replaceCodes(resultMessage, '&')))
+                                                .onClick(TextActions.openUrl(new URL(result.getUrl())))
+                                                .onHover(TextActions.showText(Texts.of(result.getDescription().replaceAll("\\p{C}", "").trim()))).build());
+                                    }
+                                }
+                            } catch (IOException e) {
+                                if (!Enquiry.instance.game.getEventManager().post(new SearchFailureEvent(target, preEvent.engine, query))) {
+                                    if (src instanceof Player) {
+                                        src.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ",
+                                                TextColors.YELLOW, query));
+                                    }
+                                    Enquiry.instance.logger.warn("An error occurred while attempting to search " + Texts.toPlain(preEvent.engine.getName()) +
+                                            " for " + query, e);
+                                }
+                            }
+                        }
+                    }).submit(plugin);
+
+                    return CommandResult.success();
+                })
                 .build();
     }
 
@@ -68,8 +122,8 @@ public abstract class SearchEngine {
      * @return The {@link SearchEngine}
      */
     public SearchEngine register() {
-        if (!this.enquiry.game.getEventManager().post(new SearchEngineRegisterEvent(this))) {
-            this.enquiry.putEngine(this);
+        if (!Enquiry.instance.game.getEventManager().post(new SearchEngineRegisterEvent(this))) {
+            Enquiry.instance.putEngine(this);
         }
         return this;
     }
@@ -96,6 +150,14 @@ public abstract class SearchEngine {
      */
     public CommandSpec getCommandSpec() {
         return commandSpec;
+    }
+
+    /**
+     * Gets the {@link PluginContainer} of the plugin creating the engine.
+     * @return The {@link PluginContainer}
+     */
+    public PluginContainer getPlugin() {
+        return plugin;
     }
 
     /**
