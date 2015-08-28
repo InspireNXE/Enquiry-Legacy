@@ -1,6 +1,8 @@
 language: java
 jdk: oraclejdk8
 
+# Quickest way to skip the install step
+install: true
 script: ./gradlew build
 
 notifications:
