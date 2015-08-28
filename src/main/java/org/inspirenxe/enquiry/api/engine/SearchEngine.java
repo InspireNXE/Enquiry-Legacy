@@ -42,6 +42,7 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.util.TextMessageException;
 import org.spongepowered.api.util.command.CommandResult;
 import org.spongepowered.api.util.command.CommandSource;
 import org.spongepowered.api.util.command.spec.CommandSpec;
@@ -87,17 +88,22 @@ public abstract class SearchEngine {
                                             TextColors.RESET, ") Result(s) for: ", TextColors.YELLOW, query));
                                     int i = 1;
                                     for (SearchResult result : event.results) {
-                                        final String resultMessage = Enquiry.instance.storage.getChildNode("engines." + event.engine.getId() + ".options.style"
-                                                + ".line-format").getString()
+                                        final String resultMessage = Enquiry.instance.storage.getChildNode("engines." + event.engine.getId() +
+                                                ".options.style.line-format").getString()
                                                 .replace("${resultNumber}", Integer.toString(i++))
                                                 .replace("${resultTitle}", result.getTitle())
                                                 .trim();
-                                        target.sendMessage(Texts.builder().append(Texts.of(Texts.replaceCodes(resultMessage, '&')))
+                                        final Text message = Texts.legacy('&').from(resultMessage).builder()
                                                 .onClick(TextActions.openUrl(new URL(result.getUrl())))
-                                                .onHover(TextActions.showText(Texts.of(result.getDescription().replaceAll("\\p{C}", "").trim()))).build());
+                                                .onHover(result.getDescription() != null && !result.getDescription().isEmpty() ?
+                                                        TextActions.showText(Texts.of(result.getDescription().replaceAll("[^\\x20-\\x7e]", ""))) :
+                                                        null)
+                                                .build();
+                                        System.out.println(result.getDescription());
+                                        target.sendMessage(message);
                                     }
                                 }
-                            } catch (IOException e) {
+                            } catch (IOException | TextMessageException e) {
                                 if (!Enquiry.instance.game.getEventManager().post(new SearchFailureEvent(target, preEvent.engine, query))) {
                                     if (src instanceof Player) {
                                         src.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ",

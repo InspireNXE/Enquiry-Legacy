@@ -59,6 +59,8 @@ public class Storage {
         this.registerDefaultNode("engines.bing.auth.account-key", "");
         this.registerDefaultNode("engines.bing.options.aliases", ImmutableList.of("bing", "b"));
         this.registerDefaultNode("engines.bing.options.style.line-format", "&f${resultNumber}. &d${resultTitle}");
+        this.registerDefaultNode("engines.duckduckgo.options.aliases", ImmutableList.of("duckduckgo", "ddg", "d"));
+        this.registerDefaultNode("engines.duckduckgo.options.style.line-format", "&f${resultNumber}. &d${resultTitle}");
         this.registerDefaultNode("engines.google.auth.api-key", "");
         this.registerDefaultNode("engines.google.auth.search-id", "");
         this.registerDefaultNode("engines.google.options.aliases", ImmutableList.of("google", "g"));

@@ -33,6 +33,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.event.SearchEngineRegistrationEvent;
 import org.inspirenxe.enquiry.engine.BingEngine;
+import org.inspirenxe.enquiry.engine.DuckDuckGoEngine;
 import org.inspirenxe.enquiry.engine.GoogleEngine;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -82,6 +83,9 @@ public class Enquiry {
 
         final List<String> bingAliases = storage.getChildNode("engines.bing.options.aliases").getList(Types::asString);
         new BingEngine("bing", bingAliases.toArray(new String[bingAliases.size()])).register();
+
+        final List<String> duckduckgoAliases = storage.getChildNode("engines.duckduckgo.options.aliases").getList(Types::asString);
+        new DuckDuckGoEngine("duckduckgo", duckduckgoAliases.toArray(new String[duckduckgoAliases.size()])).register();
 
         final List<String> googleAliases = storage.getChildNode("engines.google.options.aliases").getList(Types::asString);
         new GoogleEngine("google", googleAliases.toArray(new String[googleAliases.size()])).register();
