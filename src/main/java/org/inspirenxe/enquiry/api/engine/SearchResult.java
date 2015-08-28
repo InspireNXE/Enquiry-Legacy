@@ -26,21 +26,21 @@ package org.inspirenxe.enquiry.api.engine;
 
 public interface SearchResult {
 
-        /**
-         * Gets the title of the result.
-         * @return The title
-         */
-        String getTitle();
+    /**
+     * Gets the title of the result.
+     * @return The title
+     */
+    String getTitle();
 
-        /**
-         * Gets the description of the result.
-         * @return The description
-         */
-        String getDescription();
+    /**
+     * Gets the description of the result.
+     * @return The description
+     */
+    String getDescription();
 
-        /**
-         * Gets the URL of the result.
-         * @return The url
-         */
-        String getUrl();
+    /**
+     * Gets the URL of the result.
+     * @return The url
+     */
+    String getUrl();
 }

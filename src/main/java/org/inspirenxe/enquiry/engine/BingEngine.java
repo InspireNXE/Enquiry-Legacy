@@ -93,11 +93,13 @@ public class BingEngine extends SearchEngine {
     }
 
     private class BingData {
+
         @SerializedName("results")
         private CopyOnWriteArrayList<BingResult> results;
     }
 
     public class BingResult implements SearchResult {
+
         @SerializedName("Title")
         private String title;
 

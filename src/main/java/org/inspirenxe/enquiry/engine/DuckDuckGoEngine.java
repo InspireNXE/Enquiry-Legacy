@@ -90,6 +90,7 @@ public class DuckDuckGoEngine extends SearchEngine {
     }
 
     public class DuckDuckGoResult implements SearchResult {
+
         @SerializedName("Text")
         private String title;
 

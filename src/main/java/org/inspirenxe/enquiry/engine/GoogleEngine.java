@@ -102,6 +102,7 @@ public class GoogleEngine extends SearchEngine {
     }
 
     public class GoogleResult implements SearchResult {
+
         @SerializedName("title")
         private String title;
 

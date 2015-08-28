@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class SearchEngine {
+
     private final PluginContainer plugin;
     private final String id;
     private final List<String> aliases = Lists.newArrayList();
@@ -109,8 +110,9 @@ public abstract class SearchEngine {
                                         src.sendMessage(Texts.of("An error occurred while attempting to search ", preEvent.engine.getName(), " for ",
                                                 TextColors.YELLOW, query));
                                     }
-                                    Enquiry.instance.logger.warn("An error occurred while attempting to search " + Texts.toPlain(preEvent.engine.getName()) +
-                                            " for " + query, e);
+                                    Enquiry.instance.logger
+                                            .warn("An error occurred while attempting to search " + Texts.toPlain(preEvent.engine.getName()) +
+                                                    " for " + query, e);
                                 }
                             }
                         }
