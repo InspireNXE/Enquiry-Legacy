@@ -12,13 +12,13 @@ A simple plugin that allows you to search the web within Minecraft. It is licens
 * [Download]
 
 ### Prerequisites
-* [Java] 8 (Running)
-* [Gradle] 2.4+ (Building)
+* [Java] 8
+* [Gradle] 2.6+
 
 ### Features
 * Ability to search [Bing]
 * Ability to search [Google]
-* ([**Planned**](https://github.com/InspireNXE/Enquiry/issues/1)) Ability to search [DuckDuckGo]
+* Ability to search [DuckDuckGo]
 * ([**Planned**](https://github.com/InspireNXE/Enquiry/issues/2)) Ability to search [Wolfram Alpha]
 * Click results and open them in the default web browser
 * Add search engines through an API
