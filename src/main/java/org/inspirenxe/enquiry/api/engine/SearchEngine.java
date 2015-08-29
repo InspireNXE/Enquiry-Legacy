@@ -100,7 +100,6 @@ public abstract class SearchEngine {
                                                         TextActions.showText(Texts.of(result.getDescription().replaceAll("[^\\x20-\\x7e]", ""))) :
                                                         null)
                                                 .build();
-                                        System.out.println(result.getDescription());
                                         target.sendMessage(message);
                                     }
                                 }
@@ -117,10 +116,8 @@ public abstract class SearchEngine {
                             }
                         }
                     }).submit(plugin);
-
                     return CommandResult.success();
-                })
-                .build();
+                }).build();
     }
 
     /**
