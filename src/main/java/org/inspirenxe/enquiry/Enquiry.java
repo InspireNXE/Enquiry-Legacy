@@ -53,7 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Plugin(id = "enquiry", name = "Enquiry", version = "1.1")
+@Plugin(id = "enquiry", name = "Enquiry", version = "1.2")
 @NonnullByDefault
 public class Enquiry {
 

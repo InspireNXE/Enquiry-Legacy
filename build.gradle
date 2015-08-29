@@ -10,7 +10,7 @@ sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
 archivesBaseName = 'enquiry'
-version = '1.1'
+version = '1.2'
 ext.name = 'Enquiry'
 ext.organization = 'InspireNXE'
 ext.url = 'http://github.com/InspireNXE/'
