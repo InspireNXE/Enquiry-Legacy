@@ -19,7 +19,6 @@ A simple plugin that allows you to search the web within Minecraft. It is licens
 * Ability to search [Bing]
 * Ability to search [Google]
 * Ability to search [DuckDuckGo]
-* ([**Planned**](https://github.com/InspireNXE/Enquiry/issues/2)) Ability to search [Wolfram Alpha]
 * Click results and open them in the default web browser
 * Add search engines through an API
 * Specify aliases through the configuration file
