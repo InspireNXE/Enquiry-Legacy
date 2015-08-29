@@ -45,4 +45,3 @@ To build Enquiry, simply run `gradle`. The compiled jar is located in `./libs/`.
 [MIT License]: http://www.tldrlegal.com/license/mit-license
 [Source]: https://github.com/InspireNXE/Enquiry/
 [Wiki]: https://github.com/InspireNXE/Enquiry/wiki
-[Wolfram Alpha]: https://www.wolframalpha.com/
