@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry;
+package org.inspirenxe.enquiry.plugin;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;

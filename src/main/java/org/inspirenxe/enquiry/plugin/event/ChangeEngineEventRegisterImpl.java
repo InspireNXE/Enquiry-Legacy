@@ -22,65 +22,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.plugin.event;
 
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.inspirenxe.enquiry.api.engine.SearchResult;
+import org.inspirenxe.enquiry.api.event.ChangeEngineEvent;
 import org.inspirenxe.enquiry.plugin.Enquiry;
-import org.spongepowered.api.event.Cancellable;
-import org.spongepowered.api.event.Event;
-import org.spongepowered.api.event.cause.CauseTracked;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.impl.AbstractEvent;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.util.List;
+@NonnullByDefault
+public class ChangeEngineEventRegisterImpl extends AbstractEvent implements ChangeEngineEvent.Register {
 
-public interface SearchEvent extends Event, CauseTracked {
+    private final Cause cause;
+    private final SearchEngine engine;
+    private boolean isCancelled = false;
 
-    /**
-     * Gets the {@link SearchEngine}
-     * @return The engine
-     */
-    SearchEngine getEngine();
-
-    /**
-     * Gets the {@link Enquiry} instance
-     * @return The Enquiry instance
-     */
-    Enquiry getEnquiry();
-
-    /**
-     * Gets the query being searched for
-     * @return The query
-     */
-    String getQuery();
-
-    /**
-     * Fired before the {@link SearchEngine} performs a search
-     */
-    interface Pre extends SearchEvent, Cancellable {
-
-        /**
-         * Sets the query to be searched for
-         * @param query The query
-         */
-        void setQuery(String query);
+    public ChangeEngineEventRegisterImpl(Cause cause, SearchEngine engine) {
+        this.cause = cause;
+        this.engine = engine;
     }
 
-    /**
-     * Fired when a {@link SearchEngine} performs a successful search
-     */
-    interface Success extends SearchEvent {
-
-        /**
-         * Gets the results of the search
-         * @return The results
-         */
-        List<? extends SearchResult> getResults();
+    @Override
+    public boolean isCancelled() {
+        return isCancelled;
     }
 
-    /**
-     * Fired when a {@link SearchEngine} fails a search
-     */
-    interface Failure extends SearchEvent {
+    @Override
+    public void setCancelled(boolean cancel) {
+        isCancelled = cancel;
+    }
 
+    @Override
+    public Cause getCause() {
+        return cause;
+    }
+
+    @Override
+    public Enquiry getEnquiry() {
+        return Enquiry.instance;
+    }
+
+    @Override
+    public SearchEngine getEngine() {
+        return engine;
     }
 }

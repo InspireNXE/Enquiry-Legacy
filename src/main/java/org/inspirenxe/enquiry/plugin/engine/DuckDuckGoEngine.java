@@ -22,15 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.engine;
+package org.inspirenxe.enquiry.plugin.engine;
 
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.engine.SearchResult;
+import org.inspirenxe.enquiry.plugin.Enquiry;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.format.TextColors;

@@ -22,17 +22,61 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.plugin.event;
 
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.spongepowered.api.util.command.CommandSource;
+import org.inspirenxe.enquiry.api.event.SearchEvent;
+import org.inspirenxe.enquiry.plugin.Enquiry;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.impl.AbstractEvent;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-/**
- * Fired when a search has failed.
- */
-public class SearchFailureEvent extends SearchEvent {
+@NonnullByDefault
+public class SearchEventPreImpl extends AbstractEvent implements SearchEvent.Pre {
 
-    public SearchFailureEvent(CommandSource source, SearchEngine engine, String query) {
-        super(source, engine, query);
+    private final Cause cause;
+    private final SearchEngine engine;
+    private boolean isCancelled;
+    private String query;
+
+    public SearchEventPreImpl(Cause cause, SearchEngine engine, String query) {
+        this.cause = cause;
+        this.engine = engine;
+        this.query = query;
+    }
+
+    @Override
+    public Cause getCause() {
+        return cause;
+    }
+
+    @Override
+    public SearchEngine getEngine() {
+        return engine;
+    }
+
+    @Override
+    public String getQuery() {
+        return query;
+    }
+
+    @Override
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
+    @Override
+    public Enquiry getEnquiry() {
+        return Enquiry.instance;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return isCancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        isCancelled = cancel;
     }
 }

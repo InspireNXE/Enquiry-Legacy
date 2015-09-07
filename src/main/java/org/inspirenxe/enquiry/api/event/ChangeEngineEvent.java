@@ -25,38 +25,36 @@
 package org.inspirenxe.enquiry.api.event;
 
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.spongepowered.api.event.AbstractEvent;
+import org.inspirenxe.enquiry.plugin.Enquiry;
 import org.spongepowered.api.event.Cancellable;
+import org.spongepowered.api.event.Event;
+import org.spongepowered.api.event.cause.CauseTracked;
 
-/**
- * Fired when Enquiry is registering the search engine.
- * <p>
- * Cancelling the event will stop the registration of the search engine.
- */
-public class SearchEngineRegisterEvent extends AbstractEvent implements Cancellable {
+public interface ChangeEngineEvent extends Event, CauseTracked {
 
-    private final SearchEngine engine;
-    private boolean cancelled;
+    /**
+     * Gets the {@link Enquiry} instance
+     * @return The Enquiry instance
+     */
+    Enquiry getEnquiry();
 
-    public SearchEngineRegisterEvent(SearchEngine engine) {
-        this.engine = engine;
+    /**
+     * Gets the {@link SearchEngine}
+     * @return The engine
+     */
+    SearchEngine getEngine();
+
+    /**
+     * Fired when a {@link SearchEngine} is being registered
+     */
+    interface Register extends ChangeEngineEvent, Cancellable {
+
     }
 
     /**
-     * Gets the {@link SearchEngine} being registered.
-     * @return The engine
+     * Fired when a {@link SearchEngine} is being unregistered
      */
-    public SearchEngine getEngine() {
-        return engine;
-    }
+    interface Unregister extends ChangeEngineEvent {
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
     }
 }

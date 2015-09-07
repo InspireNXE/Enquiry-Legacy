@@ -22,39 +22,56 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.plugin.event;
 
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.spongepowered.api.util.command.CommandSource;
+import org.inspirenxe.enquiry.api.engine.SearchResult;
+import org.inspirenxe.enquiry.api.event.SearchEvent;
+import org.inspirenxe.enquiry.plugin.Enquiry;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.impl.AbstractEvent;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-/**
- * Fired before the search occurs.
- * <p>
- * Cancelling will prevent a search from occurring.
- */
-public class SearchPreEvent extends SearchEvent {
+import java.util.Collections;
+import java.util.List;
 
-    public SearchPreEvent(CommandSource source, SearchEngine engine, String query) {
-        super(source, engine, query);
-    }
+@NonnullByDefault
+public class SearchEventSuccessImpl extends AbstractEvent implements SearchEvent.Success {
 
-    /**
-     * Sets the engine to search with.
-     * @param engine The {@link SearchEngine}
-     * @return The event
-     */
-    public SearchPreEvent setEngine(SearchEngine engine) {
+    private final Cause cause;
+    private final SearchEngine engine;
+    private final String query;
+    private final List<? extends SearchResult> results;
+
+    public SearchEventSuccessImpl(Cause cause, SearchEngine engine, String query, List<? extends SearchResult> results) {
+        this.cause = cause;
         this.engine = engine;
-        return this;
+        this.query = query;
+        this.results = results;
     }
 
-    /**
-     * Sets the query to search for.
-     * @param query The query
-     * @return The event
-     */
-    public SearchPreEvent setQuery(String query) {
-        this.query = query;
-        return this;
+    @Override
+    public Cause getCause() {
+        return cause;
+    }
+
+    @Override
+    public SearchEngine getEngine() {
+        return engine;
+    }
+
+    @Override
+    public String getQuery() {
+        return query;
+    }
+
+    @Override
+    public Enquiry getEnquiry() {
+        return Enquiry.instance;
+    }
+
+    @Override
+    public List<? extends SearchResult> getResults() {
+        return Collections.unmodifiableList(results);
     }
 }

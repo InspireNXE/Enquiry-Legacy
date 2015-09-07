@@ -22,25 +22,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.plugin.event;
 
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.inspirenxe.enquiry.api.engine.SearchResult;
-import org.spongepowered.api.util.command.CommandSource;
+import org.inspirenxe.enquiry.api.event.ChangeEngineEvent;
+import org.inspirenxe.enquiry.plugin.Enquiry;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.impl.AbstractEvent;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.util.List;
+@NonnullByDefault
+public class ChangeEngineEventUnregisterImpl extends AbstractEvent implements ChangeEngineEvent.Unregister {
 
-/**
- * Fired when a search has succeeded.
- * <p>
- * Cancelling will not prevent a search from occurring, only prevent the output of the search results.
- */
-public class SearchSuccessEvent extends SearchEvent {
+    private final Cause cause;
+    private final SearchEngine engine;
 
-    public final List<? extends SearchResult> results;
+    public ChangeEngineEventUnregisterImpl(Cause cause, SearchEngine engine) {
+        this.cause = cause;
+        this.engine = engine;
+    }
 
-    public SearchSuccessEvent(CommandSource source, SearchEngine engine, String query, List<? extends SearchResult> results) {
-        super(source, engine, query);
-        this.results = results;
+    @Override
+    public Cause getCause() {
+        return cause;
+    }
+
+    @Override
+    public Enquiry getEnquiry() {
+        return Enquiry.instance;
+    }
+
+    @Override
+    public SearchEngine getEngine() {
+        return engine;
     }
 }

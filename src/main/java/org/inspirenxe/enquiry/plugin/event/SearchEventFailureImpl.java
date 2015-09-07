@@ -22,30 +22,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.plugin.event;
 
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.spongepowered.api.event.AbstractEvent;
+import org.inspirenxe.enquiry.api.event.SearchEvent;
+import org.inspirenxe.enquiry.plugin.Enquiry;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.impl.AbstractEvent;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.util.Collections;
-import java.util.Set;
+@NonnullByDefault
+public class SearchEventFailureImpl extends AbstractEvent implements SearchEvent.Failure {
 
-/**
- * Fired when Enquiry is registering search engines.
- */
-public class SearchEngineRegistrationEvent extends AbstractEvent {
+    private final Cause cause;
+    private final SearchEngine engine;
+    private final String query;
 
-    private final Set<SearchEngine> engines;
-
-    public SearchEngineRegistrationEvent(Set<SearchEngine> engines) {
-        this.engines = engines;
+    public SearchEventFailureImpl(Cause cause, SearchEngine engine, String query) {
+        this.cause = cause;
+        this.engine = engine;
+        this.query = query;
     }
 
-    /**
-     * Gets the {@link SearchEngine}'s to be registered.
-     * @return The engines to be registered
-     */
-    public Set<SearchEngine> getEngines() {
-        return Collections.unmodifiableSet(engines);
+    @Override
+    public Cause getCause() {
+        return cause;
+    }
+
+    @Override
+    public SearchEngine getEngine() {
+        return engine;
+    }
+
+    @Override
+    public String getQuery() {
+        return query;
+    }
+
+    @Override
+    public Enquiry getEnquiry() {
+        return Enquiry.instance;
     }
 }

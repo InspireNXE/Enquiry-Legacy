@@ -22,15 +22,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.engine;
-
+package org.inspirenxe.enquiry.plugin.engine;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-import org.inspirenxe.enquiry.Enquiry;
 import org.inspirenxe.enquiry.api.engine.SearchEngine;
 import org.inspirenxe.enquiry.api.engine.SearchResult;
+import org.inspirenxe.enquiry.plugin.Enquiry;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Texts;
 import org.spongepowered.api.text.format.TextColors;
@@ -39,47 +38,57 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class BingEngine extends SearchEngine {
+public class GoogleEngine extends SearchEngine {
 
-    private final String accountKey;
-    @SerializedName("d")
-    private BingData data;
+    private final String apiKey, searchId;
 
-    public BingEngine(String id, String... aliases) {
+    public GoogleEngine(String id, String... aliases) {
         super(Enquiry.instance.container, id, aliases);
-        this.accountKey = Enquiry.instance.storage.getChildNode("engines.bing.auth.account-key").getString("");
+        this.apiKey = Enquiry.instance.storage.getChildNode("engines.google.auth.api-key").getString("");
+        this.searchId = Enquiry.instance.storage.getChildNode("engines.google.auth.search-id").getString("");
     }
+
+    @SerializedName("items")
+    private CopyOnWriteArrayList<GoogleResult> results;
 
     @Override
     public Text getName() {
-        return Texts.of(TextColors.GRAY, "Bing");
+        return Texts.of(TextColors.BLUE, "G",
+                TextColors.RED, "o",
+                TextColors.YELLOW, "o",
+                TextColors.BLUE, "g",
+                TextColors.GREEN, "l",
+                TextColors.RED, "e");
     }
 
     @Override
     public String getUrl() {
-        return "https://bing.com";
+        return "https://google.com";
     }
 
     @Override
     public String getSearchUrl() {
-        return "https://api.datamarket.azure.com/Bing/Search/Web";
+        return "https://www.googleapis.com/customsearch/v1";
     }
 
     @Override
     public HttpRequest getRequest(String query) {
         return HttpRequest.get(getSearchUrl(), true,
-                "Query", "\'" + query + "\'",
-                "$format", "json",
-                "$top", 10)
-                .basic(this.accountKey, this.accountKey)
+                "key", this.apiKey,
+                "cx", this.searchId,
+                "fields", "items(title,link,snippet)",
+                "q", query)
                 .acceptJson()
                 .acceptCharset(StandardCharsets.UTF_8.name());
     }
 
     @Override
     public CopyOnWriteArrayList<? extends SearchResult> getResults(String query) throws IOException {
-        if (this.accountKey.isEmpty()) {
-            throw new IOException("engines.bing.auth.account-key in ./config/enquiry.conf must be set in order to search with Bing!");
+        if (this.apiKey.isEmpty()) {
+            throw new IOException("engines.google.auth.api-key in ./config/enquiry.conf must be set in order to search with Google!");
+        }
+        if (this.searchId.isEmpty()) {
+            throw new IOException("engines.google.auth.search-id in ./config/enquiry.conf must be set in order to search with Google!");
         }
         final HttpRequest request = getRequest(query);
         if (request.code() != 200) {
@@ -89,24 +98,18 @@ public class BingEngine extends SearchEngine {
             throw new IOException("An error occurred while attempting to get results from " + Texts.toPlain(this.getName()) + ", Error: Body is "
                     + "empty.");
         }
-        return new Gson().fromJson(request.body(), BingEngine.class).data.results;
+        return new Gson().fromJson(request.body(), GoogleEngine.class).results;
     }
 
-    private class BingData {
+    public class GoogleResult implements SearchResult {
 
-        @SerializedName("results")
-        private CopyOnWriteArrayList<BingResult> results;
-    }
-
-    public class BingResult implements SearchResult {
-
-        @SerializedName("Title")
+        @SerializedName("title")
         private String title;
 
-        @SerializedName("Description")
+        @SerializedName("snippet")
         private String description;
 
-        @SerializedName("Url")
+        @SerializedName("link")
         private String url;
 
         @Override
