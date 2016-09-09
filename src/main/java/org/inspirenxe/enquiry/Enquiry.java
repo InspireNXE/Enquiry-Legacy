@@ -25,9 +25,9 @@
 package org.inspirenxe.enquiry;
 
 import com.google.inject.Inject;
-import org.inspirenxe.enquiry.engine.EngineManager;
-import org.inspirenxe.enquiry.engine.SearchEngine;
-import org.inspirenxe.enquiry.engine.SearchResult;
+import org.inspirenxe.enquiry.engine.EngineType;
+import org.inspirenxe.enquiry.engine.EngineResult;
+import org.inspirenxe.enquiry.engine.EngineTypeRegistryModule;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
@@ -36,8 +36,6 @@ import org.spongepowered.api.event.game.state.GameConstructionEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import java.io.IOException;
@@ -65,18 +63,18 @@ public final class Enquiry {
 
     @Listener
     public void onGamePreInitialization(GamePreInitializationEvent event) throws IOException {
-        Sponge.getRegistry().registerBuilderSupplier(SearchEngine.Builder.class, SearchEngine.Builder::new);
-        Sponge.getRegistry().registerBuilderSupplier(SearchResult.Builder.class, SearchResult.Builder::new);
-
-        EngineManager.put(SearchEngine.builder()
-                .name(Text.of(TextColors.GRAY, "Bing"))
-                .url("https://bing.com")
-                .apiUrl("https://api.datamarket.azure.com/Bing/Search/Web")
-                .plugin(this.container)
-                .aliases("bing", "b")
-                .commandSpec(Commands.rootCommand)
-                .build("bing"));
+        Sponge.getRegistry().registerModule(EngineTypeRegistryModule.getInstance());
+        Sponge.getRegistry().registerBuilderSupplier(EngineType.Builder.class, EngineType.Builder::new);
+        Sponge.getRegistry().registerBuilderSupplier(EngineResult.Builder.class, EngineResult.Builder::new);
 
         Sponge.getCommandManager().register(this.container, Commands.rootCommand, Constants.Meta.ID, Constants.Meta.ID.substring(1));
+    }
+
+    public Logger getLogger() {
+        return this.logger;
+    }
+
+    public PluginContainer getContainer() {
+        return this.container;
     }
 }

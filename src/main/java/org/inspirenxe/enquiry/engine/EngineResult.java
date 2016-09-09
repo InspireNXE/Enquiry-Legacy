@@ -29,19 +29,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.ResettableBuilder;
 
-public class SearchResult {
+public class EngineResult {
 
     private final Text title;
     private final Text description;
     private final String url;
 
-    public SearchResult(Builder builder) {
+    public EngineResult(Builder builder) {
         this.title = builder.title;
         this.description = builder.description;
         this.url = builder.url;
     }
 
-    public static final class Builder implements ResettableBuilder<SearchResult, Builder> {
+    public static final class Builder implements ResettableBuilder<EngineResult, Builder> {
         Text title;
         Text description;
         String url;
@@ -51,7 +51,7 @@ public class SearchResult {
         }
 
         @Override
-        public Builder from(SearchResult value) {
+        public Builder from(EngineResult value) {
             this.title = value.title;
             this.description = value.description;
             this.url = value.url;
@@ -81,12 +81,12 @@ public class SearchResult {
             return this;
         }
 
-        public SearchResult build() {
+        public EngineResult build() {
             checkNotNull(this.title);
             checkNotNull(this.description);
             checkNotNull(this.url);
 
-            return new SearchResult(this);
+            return new EngineResult(this);
         }
     }
 }

@@ -24,27 +24,26 @@
  */
 package org.inspirenxe.enquiry;
 
-import static org.spongepowered.api.command.args.GenericArguments.choices;
+import static org.spongepowered.api.command.args.GenericArguments.catalogedElement;
 
-import org.inspirenxe.enquiry.engine.EngineManager;
-import org.inspirenxe.enquiry.engine.SearchEngine;
+import org.inspirenxe.enquiry.engine.EngineType;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.text.Text;
 
 import java.util.Optional;
 
-final class Commands {
+public final class Commands {
 
-    static final CommandSpec rootCommand = CommandSpec.builder()
+    public static final CommandSpec rootCommand = CommandSpec.builder()
             .permission(Constants.Meta.ID + ".command.search")
             .description(Text.of("The enquiry command description"))
             .extendedDescription(Text.of("The extended enquiry command description"))
-            .arguments(choices(Text.of("searchAlias"), EngineManager.getEngines()))
+            .arguments(catalogedElement(Text.of("engineType"), EngineType.class))
             .executor((src, args) -> {
-                final Optional<SearchEngine> optEngine = args.getOne("searchAlias");
+                final Optional<EngineType> optEngine = args.getOne("engineType");
                 if (optEngine.isPresent()) {
-                    src.sendMessage(optEngine.get().getName());
+                    src.sendMessage(optEngine.get().getDisplayName());
                     return CommandResult.success();
                 }
                 return CommandResult.empty();

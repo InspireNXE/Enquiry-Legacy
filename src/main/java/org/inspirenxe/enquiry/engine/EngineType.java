@@ -28,6 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import org.spongepowered.api.CatalogType;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -37,19 +38,21 @@ import org.spongepowered.api.util.ResettableBuilder;
 import java.util.Arrays;
 import java.util.List;
 
-public class SearchEngine {
+public class EngineType implements CatalogType {
 
     private final String id;
-    private final Text name;
+    private final String name;
     private final String url;
     private final String apiUrl;
+    private final Text displayName;
     private final PluginContainer plugin;
     private final CommandSpec commandSpec;
     private final List<String> aliases;
 
-    public SearchEngine(String id, Builder builder) {
+    public EngineType(String id, Builder builder) {
         this.id = id;
         this.name = builder.name;
+        this.displayName = builder.displayName;
         this.url = builder.url;
         this.apiUrl = builder.apiUrl;
         this.plugin = builder.plugin;
@@ -57,12 +60,18 @@ public class SearchEngine {
         this.aliases = builder.aliases;
     }
 
+    @Override
     public String getId() {
         return this.id;
     }
 
-    public Text getName() {
+    @Override
+    public String getName() {
         return this.name;
+    }
+
+    public Text getDisplayName() {
+        return this.displayName;
     }
 
     public String getUrl() {
@@ -89,6 +98,24 @@ public class SearchEngine {
         return Sponge.getRegistry().createBuilder(Builder.class);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        EngineType engineType = (EngineType) o;
+        return java.util.Objects.equals(this.id, engineType.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(this.id);
+    }
+
+    @Override
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("id", this.id)
@@ -97,8 +124,9 @@ public class SearchEngine {
                 .toString();
     }
 
-    public static final class Builder implements ResettableBuilder<SearchEngine, Builder> {
-        Text name;
+    public static final class Builder implements ResettableBuilder<EngineType, Builder> {
+        String name;
+        Text displayName;
         String url;
         String apiUrl;
         PluginContainer plugin;
@@ -110,7 +138,11 @@ public class SearchEngine {
         }
 
         @Override
-        public Builder from(SearchEngine value) {
+        public Builder from(EngineType value) {
+            this.name = value.name;
+            this.url = value.url;
+            this.apiUrl = value.apiUrl;
+            this.displayName = value.displayName;
             this.plugin = value.plugin;
             this.commandSpec = value.commandSpec;
             this.aliases = value.aliases;
@@ -127,8 +159,13 @@ public class SearchEngine {
             return this;
         }
 
-        public Builder name(Text name) {
+        public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder displayName(Text displayName) {
+            this.displayName = displayName;
             return this;
         }
 
@@ -157,13 +194,17 @@ public class SearchEngine {
             return this;
         }
 
-        public SearchEngine build(String id) {
+        public EngineType build(String id) {
             checkNotNull(id);
+            checkNotNull(this.name);
+            checkNotNull(this.displayName);
+            checkNotNull(this.url);
+            checkNotNull(this.apiUrl);
             checkNotNull(this.plugin);
             checkNotNull(this.commandSpec);
             checkNotNull(this.aliases);
 
-            return new SearchEngine(id, this);
+            return new EngineType(id, this);
         }
     }
 }
