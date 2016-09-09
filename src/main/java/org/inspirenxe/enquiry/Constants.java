@@ -1,7 +1,7 @@
-/**
+/*
  * This file is part of Enquiry, licensed under the MIT License (MIT).
  *
- * Copyright (c) InspireNXE <http://github.com/InspireNXE/>
+ * Copyright (c) InspireNXE <http://github.com/InspireNXE>
  * Copyright (c) contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,17 +22,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry;
 
-import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.spongepowered.api.util.command.CommandSource;
+public class Constants {
 
-/**
- * Fired when a search has failed.
- */
-public class SearchFailureEvent extends SearchEvent {
+    private Constants() {
+    }
 
-    public SearchFailureEvent(CommandSource source, SearchEngine engine, String query) {
-        super(source, engine, query);
+    public static final class Meta {
+        public static final String ID = "enquiry";
+        static final String NAME = "Enquiry";
+        static final String VERSION = "1.10.2-r5.0";
+        static final String AUTHORS = "InspireNXE";
+        static final String URL = "https://github.com/InspireNXE";
+        static final String DESCRIPTION = "A simple plugin for the Sponge platform that allows you to search the web within Minecraft.";
+
+        private Meta() {
+        }
     }
 }

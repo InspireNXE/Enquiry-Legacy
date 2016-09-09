@@ -1,7 +1,7 @@
-/**
+/*
  * This file is part of Enquiry, licensed under the MIT License (MIT).
  *
- * Copyright (c) InspireNXE <http://github.com/InspireNXE/>
+ * Copyright (c) InspireNXE <http://github.com/InspireNXE>
  * Copyright (c) contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,25 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.configuration;
 
-import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.inspirenxe.enquiry.api.engine.SearchResult;
-import org.spongepowered.api.util.command.CommandSource;
+public abstract class AbstractConfiguration {
 
-import java.util.List;
-
-/**
- * Fired when a search has succeeded.
- * <p>
- * Cancelling will not prevent a search from occurring, only prevent the output of the search results.
- */
-public class SearchSuccessEvent extends SearchEvent {
-
-    public final List<? extends SearchResult> results;
-
-    public SearchSuccessEvent(CommandSource source, SearchEngine engine, String query, List<? extends SearchResult> results) {
-        super(source, engine, query);
-        this.results = results;
-    }
 }

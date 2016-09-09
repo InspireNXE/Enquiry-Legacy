@@ -1,7 +1,7 @@
-/**
+/*
  * This file is part of Enquiry, licensed under the MIT License (MIT).
  *
- * Copyright (c) InspireNXE <http://github.com/InspireNXE/>
+ * Copyright (c) InspireNXE <http://github.com/InspireNXE>
  * Copyright (c) contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,41 +22,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.inspirenxe.enquiry.api.event;
+package org.inspirenxe.enquiry.engine;
 
-import org.inspirenxe.enquiry.api.engine.SearchEngine;
-import org.spongepowered.api.event.AbstractEvent;
-import org.spongepowered.api.event.Cancellable;
+import com.google.common.collect.Maps;
 
-/**
- * Fired when Enquiry is registering the search engine.
- * <p>
- * Cancelling the event will stop the registration of the search engine.
- */
-public class SearchEngineRegisterEvent extends AbstractEvent implements Cancellable {
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
-    private final SearchEngine engine;
-    private boolean cancelled;
+public class EngineManager {
 
-    public SearchEngineRegisterEvent(SearchEngine engine) {
-        this.engine = engine;
+    private static final Map<String, SearchEngine> engines = Maps.newHashMap();
+
+    private EngineManager() {
     }
 
-    /**
-     * Gets the {@link SearchEngine} being registered.
-     * @return The engine
-     */
-    public SearchEngine getEngine() {
-        return engine;
+    public static Map<String, SearchEngine> getEngines() {
+        return Collections.unmodifiableMap(engines);
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public static void put(SearchEngine engine) {
+        // TODO: Post registration event
+        for (String alias : engine.getAliases()) {
+            engines.put(alias, engine);
+        }
     }
 
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
+    public static void putAll(Collection<? extends SearchEngine> engines) {
+        engines.forEach(EngineManager::put);
+    }
+
+    public static void remove(SearchEngine engine) {
+        // TODO: Post unregistration event
+        engine.getAliases().forEach(engines::remove);
+    }
+
+    public static void removeAll(Collection<? extends SearchEngine> engines) {
+        engines.forEach(EngineManager::remove);
     }
 }

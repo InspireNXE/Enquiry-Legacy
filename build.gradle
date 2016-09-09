@@ -1,31 +1,28 @@
 plugins {
     id 'java'
-    id 'com.github.hierynomus.license' version '0.11.0'
-    id 'com.github.johnrengelman.shadow' version '1.2.1'
+    id 'com.github.hierynomus.license' version '0.13.1'
+    id 'com.github.johnrengelman.shadow' version '1.2.3'
 }
 
-defaultTasks 'clean', 'build'
+defaultTasks 'clean', 'licenseFormat', 'build'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
-archivesBaseName = 'enquiry'
-version = '1.2'
-ext.name = 'Enquiry'
-ext.organization = 'InspireNXE'
-ext.url = 'http://github.com/InspireNXE/'
+archivesBaseName = project.name.toLowerCase()
+version = "${project.version}-r${project.apiVersion.split("-")[0]}"
 
 repositories {
     mavenCentral()
     maven {
-        name 'Sponge maven repo'
-        url 'http://repo.spongepowered.org/maven'
+        name = 'sponge'
+        url = 'http://repo.spongepowered.org/maven'
     }
 }
 
 dependencies {
     compile 'com.github.kevinsawicki:http-request:6.0'
-    compile 'org.spongepowered:spongeapi:2.1-SNAPSHOT'
+    compile "org.spongepowered:spongeapi:${project.apiVersion}"
 }
 
 shadowJar {
@@ -48,10 +45,29 @@ license {
 }
 
 build.dependsOn shadowJar
-build.dependsOn licenseFormatMain
+build.dependsOn licenseFormat
 
-if (JavaVersion.current().isJava8Compatible() || JavaVersion.current().isJava9Compatible()) {
-    tasks.withType(Javadoc) {
-        options.addStringOption('Xdoclint:none', '-quiet')
+configure([compileJava, compileTestJava]) {
+    options.compilerArgs += ['-Xlint:all', '-Xlint:-path']
+    options.deprecation = true
+    options.encoding = 'UTF-8'
+}
+
+license {
+    ext {
+        name = project.name
+        organization = project.organization
+        url = project.url
     }
+    header = rootProject.file('HEADER.txt')
+    ignoreFailures = false
+    strictCheck = true
+    include '**/*.java'
+    mapping {
+        java = 'SLASHSTAR_STYLE'
+    }    
+}
+
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
 }
