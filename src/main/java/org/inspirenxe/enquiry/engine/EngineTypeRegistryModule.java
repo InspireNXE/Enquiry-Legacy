@@ -30,13 +30,15 @@ public class EngineTypeRegistryModule implements AdditionalCatalogRegistryModule
     @Override
     public void registerAdditionalCatalog(EngineType extraCatalog) {
         checkNotNull(extraCatalog);
-        if (this.maps.containsKey(extraCatalog.getId())) {
-            throw new CatalogTypeAlreadyRegisteredException(extraCatalog.getId());
+        for (String alias : extraCatalog.getAliases()) {
+            if (this.maps.containsKey(alias)) {
+                throw new CatalogTypeAlreadyRegisteredException(alias);
+            }
+
+            this.maps.put(alias, extraCatalog);
+
+            Enquiry.instance.getLogger().info("Registered instance [{}].", alias);
         }
-
-        this.maps.put(extraCatalog.getId(), extraCatalog);
-
-        Enquiry.instance.getLogger().info("Registered instance [{}].", extraCatalog.getId());
     }
 
     @Override

@@ -31,6 +31,7 @@ public class Constants {
 
     public static final class Meta {
         public static final String ID = "enquiry";
+        static final String ABBREVIATION = "eq";
         static final String NAME = "Enquiry";
         static final String VERSION = "1.10.2-r5.0";
         static final String AUTHORS = "InspireNXE";

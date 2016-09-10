@@ -67,7 +67,9 @@ public final class Enquiry {
         Sponge.getRegistry().registerBuilderSupplier(EngineType.Builder.class, EngineType.Builder::new);
         Sponge.getRegistry().registerBuilderSupplier(EngineResult.Builder.class, EngineResult.Builder::new);
 
-        Sponge.getCommandManager().register(this.container, Commands.rootCommand, Constants.Meta.ID, Constants.Meta.ID.substring(1));
+        EngineTypeRegistryModule.getInstance().registerDefaults();
+
+        Sponge.getCommandManager().register(this.container, Commands.rootCommand, Constants.Meta.ID, Constants.Meta.ABBREVIATION);
     }
 
     public Logger getLogger() {
